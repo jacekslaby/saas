@@ -39,7 +39,6 @@ paths:
               $ref: '#/components/schemas/Request'
             example:
               request_type: CreateAlarm
-              uuid: "123e4567-e89b-12d3-a456-426655440000"
               alarm_dto:
                 notification_identifier: "eric2g:south:34566"
                 event_time: "2018-10-19T13:44:56.334+02:00"
@@ -47,9 +46,15 @@ paths:
       responses:
         '200':
           description: "successful operation"
-        '405':
-          description: "Invalid input"
-          
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+        '403':
+          description: |
+            Provided access token (in Header 'Authentication: Bearer ...') 
+            does not allow to modify Alarms in this Domain and/or Adapter.
+
   /domains/{domainName}/adapters/{adapterName}/request/createWithList:
     post:
       summary: Add new requests to the repository
@@ -66,16 +71,27 @@ paths:
                 $ref: '#/components/schemas/Request'
             example:
               - request_type: ResyncAllStart
-                uuid: 123e4567-e89b-12d3-a456-426655440001
               - request_type: CreateAlarm
-                uuid: "123e4567-e89b-12d3-a456-426655440000"
                 alarm_dto:
                   notification_identifier: "eric2g:south:34566"
               - request_type: ResyncAllEnd
-                uuid: 123e4567-e89b-12d3-a456-426655440003
       responses:
         '200':
           description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RequestResponse'
+                example: 
+                  - uuid: "123e4567-e89b-12d3-a456-426655440000"
+                  - uuid: "223e4567-e89b-12d3-a456-426655440001"
+                  - uuid: "323e4567-e89b-12d3-a456-426655440002"
+        '403':
+          description: |
+            Provided access token (in Header 'Authentication: Bearer ...') 
+            does not allow to modify Alarms in this Domain and/or Adapter.
 
 components:
   schemas:
@@ -87,6 +103,9 @@ components:
           type: string
       oneOf:
         - $ref: '#/components/schemas/CreateAlarm'
+        - $ref: '#/components/schemas/DeleteAlarm'
+        - $ref: '#/components/schemas/PatchAlarm'
+        - $ref: '#/components/schemas/PutAlarm'
         - $ref: '#/components/schemas/ResyncAllEnd'
         - $ref: '#/components/schemas/ResyncAllStart'
       discriminator:
@@ -99,15 +118,11 @@ components:
          an alarm needs to have at least one non-DeleteAlarm request 
          between `ResyncAllStart` and `ResyncAllEnd`.
         See also `ResyncAllStart`.
-      allOf: # Combines the main `AbstractRequest` schema with `ResyncAllEnd`-specific properties 
-        - $ref: '#/components/schemas/AbstractRequest'
     ResyncAllStart:     # "ResyncAllStart" is a value for the request_type property (the discriminator value)
       description: |
         `ResyncAllStart` request initiates resynchronization. 
         It is followed by zero or more alarm requests and finally by `RequestAllEnd` request.
-      allOf: # Combines the main `AbstractRequest` schema with `ResyncAllStart`-specific properties 
-        - $ref: '#/components/schemas/AbstractRequest'
-        
+
     CreateAlarm:     # "CreateAlarm" is a value for the request_type property (the discriminator value)
       description: |
         `CreateAlarm` request is ignored if Alarm with such notification_identifier 
@@ -115,24 +130,42 @@ components:
       allOf: # Combines the main `AbstractAlarmRequest` schema with `CreateAlarm`-specific properties 
         - $ref: '#/components/schemas/AbstractAlarmRequest'
         # Currently none specific properties exist.
-        
-    AbstractRequest:
+    DeleteAlarm:     # "DeleteAlarm" is a value for the request_type property (the discriminator value)
+      description: |
+        `DeleteAlarm` request is ignored if Alarm with such notification_identifier 
+        does not exists. The only used property is `notification_identifier`.
       type: object
       properties:
-        uuid:
-          type: string
-          format: uuid
-          example: "123e4567-e89b-12d3-a456-426655440000"
-    AbstractAlarmRequest:
-      allOf: # Combines the main `AbstractRequest` schema with `AbstractAlarmRequest`-specific properties 
-        - $ref: '#/components/schemas/AbstractRequest'
-        - type: object
-          # all other properties specific to a `AbstractAlarmRequest`
+        alarm_dto:
+          type: object
           properties:
-            alarm_dto:
-              $ref: '#/components/schemas/AlarmDTO'
-          required: 
-            - alarm_dto
+            notification_identifier:
+              type: string
+              example: "eric2g:south:34566"
+    PatchAlarm:     # "PatchAlarm" is a value for the request_type property (the discriminator value)
+      description: |
+        `PutAlarm` request puts Alarm with such notification_identifier overwriting 
+        it if it already exists. See also `CreateAlarm` and `PutAlarm`.
+      allOf: # Combines the main `AbstractAlarmRequest` schema with `PatchAlarm`-specific properties 
+        - $ref: '#/components/schemas/AbstractAlarmRequest'
+        # Currently none specific properties exist.
+    PutAlarm:     # "PutAlarm" is a value for the request_type property (the discriminator value)
+      description: |
+        `PutAlarm` request puts Alarm with such notification_identifier overwriting 
+        it if it already exists. See also `CreateAlarm` and `PatchAlarm`.
+      allOf: # Combines the main `AbstractAlarmRequest` schema with `PutAlarm`-specific properties 
+        - $ref: '#/components/schemas/AbstractAlarmRequest'
+        # Currently none specific properties exist.
+    AbstractAlarmRequest:
+      description: | 
+        `AbstractAlarmRequest` is used as to gather common properties for types of all Alarm requests.
+      type: object
+      # all other properties specific to a `AbstractAlarmRequest`
+      properties:
+        alarm_dto:
+          $ref: '#/components/schemas/AlarmDTO'
+      required: 
+        - alarm_dto
     AlarmDTO:
       description: AlarmDTO is used to transport Alarm properties from a client to the SA repository.
       type: object
@@ -152,6 +185,13 @@ components:
         - notification_identifier
       additionalProperties:    # we allow clients to add properties, i.e. it is a free-form object (arbitrary property/value pairs)
         type: string     # we will treat them as strings
+    RequestResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426655440000"
             
   parameters:
     domainName:
