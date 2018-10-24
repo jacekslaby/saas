@@ -1,0 +1,184 @@
+openapi: 3.0.0
+info:
+  description: |
+    This is Command API for Source Alarms repository. ('C' from 'CQRS')
+    
+    It accepts requests modyfining Alarms stored in Source Alarms repository.
+    
+    A request may concern a single Alarm (e.g. `CreateAlarm` request)
+     or all Alarms from an Adapter (e.g. `DeleteAll` request).
+    Stored Alarms are partitioned by tuple (DomainName, AdapterName).
+    Within a partition (i.e. among alarms from the same Adapter)
+     an Alarm is uniquely identified by its property `notification_identifier`.
+     
+    Every request has an optional `uuid` which may be used in Query API of Source Alarms repository.
+    Every request concerning a single Alarm must provide property `notification_identifier`.
+    
+    Clients using this API must be ready for backward compatible changes in API like
+     adding a not required property, adding a new request type, adding a new path, 
+     adding a new HTTP method, adding a new enum value.
+  version: 1.0.0
+  title: Command API of Source Alarms repository
+servers:
+  - url: http://192.168.99.100:8084
+  - url: http://192.168.99.100:8083
+  - url: https://sar.j9soft.com/v1
+  
+paths:
+  /domains/{domainName}/adapters/{adapterName}/request:
+    post:
+      summary: Add a new request to the repository
+      operationId: addRequest
+      parameters:
+        - $ref: '#/components/parameters/domainName'
+        - $ref: '#/components/parameters/adapterName'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+            example:
+              request_type: CreateAlarm
+              uuid: "123e4567-e89b-12d3-a456-426655440000"
+              alarm_dto:
+                notification_identifier: "eric2g:south:34566"
+                event_time: "2018-10-19T13:44:56.334+02:00"
+                perceived_severity: 1
+      responses:
+        '200':
+          description: "successful operation"
+        '405':
+          description: "Invalid input"
+          
+  /domains/{domainName}/adapters/{adapterName}/request/createWithList:
+    post:
+      summary: Add new requests to the repository
+      operationId: addRequests
+      parameters:
+        - $ref: '#/components/parameters/domainName'
+        - $ref: '#/components/parameters/adapterName'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Request'
+            example:
+              - request_type: ResyncAllStart
+                uuid: 123e4567-e89b-12d3-a456-426655440001
+              - request_type: CreateAlarm
+                uuid: "123e4567-e89b-12d3-a456-426655440000"
+                alarm_dto:
+                  notification_identifier: "eric2g:south:34566"
+              - request_type: ResyncAllEnd
+                uuid: 123e4567-e89b-12d3-a456-426655440003
+      responses:
+        '200':
+          description: "successful operation"
+
+components:
+  schemas:
+    Request:
+      required:
+        - request_type
+      properties:
+        request_type:
+          type: string
+      oneOf:
+        - $ref: '#/components/schemas/CreateAlarm'
+        - $ref: '#/components/schemas/ResyncAllEnd'
+        - $ref: '#/components/schemas/ResyncAllStart'
+      discriminator:
+        propertyName: request_type
+    ResyncAllEnd:     # "ResyncAllEnd" is a value for the request_type property (the discriminator value)
+      description: |
+        `ResyncAllEnd` request indicates end of resynchronization.
+        All not delivered alarms are deleted after this request is processed.
+        In order to survive during a resynchronization 
+         an alarm needs to have at least one non-DeleteAlarm request 
+         between `ResyncAllStart` and `ResyncAllEnd`.
+        See also `ResyncAllStart`.
+      allOf: # Combines the main `AbstractRequest` schema with `ResyncAllEnd`-specific properties 
+        - $ref: '#/components/schemas/AbstractRequest'
+    ResyncAllStart:     # "ResyncAllStart" is a value for the request_type property (the discriminator value)
+      description: |
+        `ResyncAllStart` request initiates resynchronization. 
+        It is followed by zero or more alarm requests and finally by `RequestAllEnd` request.
+      allOf: # Combines the main `AbstractRequest` schema with `ResyncAllStart`-specific properties 
+        - $ref: '#/components/schemas/AbstractRequest'
+        
+    CreateAlarm:     # "CreateAlarm" is a value for the request_type property (the discriminator value)
+      description: |
+        `CreateAlarm` request is ignored if Alarm with such notification_identifier 
+        already exists. See also `PutAlarm` and `PatchAlarm`.
+      allOf: # Combines the main `AbstractAlarmRequest` schema with `CreateAlarm`-specific properties 
+        - $ref: '#/components/schemas/AbstractAlarmRequest'
+        # Currently none specific properties exist.
+        
+    AbstractRequest:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426655440000"
+    AbstractAlarmRequest:
+      allOf: # Combines the main `AbstractRequest` schema with `AbstractAlarmRequest`-specific properties 
+        - $ref: '#/components/schemas/AbstractRequest'
+        - type: object
+          # all other properties specific to a `AbstractAlarmRequest`
+          properties:
+            alarm_dto:
+              $ref: '#/components/schemas/AlarmDTO'
+          required: 
+            - alarm_dto
+    AlarmDTO:
+      description: AlarmDTO is used to transport Alarm properties from a client to the SA repository.
+      type: object
+      properties:
+        notification_identifier:
+          type: string
+          example: "eric2g:south:34566"
+        event_time:
+          type: string
+          format: dateTime
+          example:   # "See https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#date.and.time.format.examples"
+            "2018-10-19T13:44:56.334+02:00"
+        perceived_severity:
+          type: integer
+          example: 1
+      required: 
+        - notification_identifier
+      additionalProperties:    # we allow clients to add properties, i.e. it is a free-form object (arbitrary property/value pairs)
+        type: string     # we will treat them as strings
+            
+  parameters:
+    domainName:
+      name: domainName
+      in: path
+      schema:
+        type: string
+      required: true
+      description: The name of Domain where Adapter is located.
+      example: "all"
+    adapterName:
+      name: adapterName
+      in: path
+      schema:
+        type: string
+      required: true
+      description: The name of Adapter whose Alarms are concerned by the request.
+      example: "AdapterEricsson2g-south"
+      
+  securitySchemes:
+    bearerAuth:            # Security scheme based on header "Authorization: Bearer <JWT token>".
+      type: http
+      scheme: bearer
+      bearerFormat: JWT    # Token needs to contain two claims {domainName:foo,adapterName:bar}
+                           # matching values of path parameters. 
+                           # (btw: On non production environments: {domainName:all,adapterName:all})
+
+# Apply the security globally to all operations
+security:
+  - bearerAuth: []
