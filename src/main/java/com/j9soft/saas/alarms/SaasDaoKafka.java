@@ -1,5 +1,6 @@
 package com.j9soft.saas.alarms;
 
+import com.j9soft.saas.alarms.model.CreateEntityRequest;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,4 +32,8 @@ public class SaasDaoKafka implements SaasDao {
         this.producer = connector.getProducer();
     }
 
+    @Override
+    public void createRequest(CreateEntityRequest request) {
+
+    }
 }

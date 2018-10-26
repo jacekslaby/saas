@@ -5,3 +5,4 @@ logback-raasV2.log
 logfile.log
 PS
 target
+src/**/model/*java

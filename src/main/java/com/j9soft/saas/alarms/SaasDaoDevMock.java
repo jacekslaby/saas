@@ -1,5 +1,6 @@
 package com.j9soft.saas.alarms;
 
+import com.j9soft.saas.alarms.model.CreateEntityRequest;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -13,4 +14,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class SaasDaoDevMock implements SaasDao {
 
+    @Override
+    public void createRequest(CreateEntityRequest request) {
+
+    }
 }
