@@ -57,7 +57,7 @@ public class SaasV1Controller implements SaasV1 {
 
         // @TODO validate requestDTOAsJson  (using OpenAPI specification)
         //
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();  // @TODO for performance reasons we should share ObjectMapper instance
         JsonNode rootNode;
         try {
             rootNode = mapper.readTree(requestDTOAsJson);

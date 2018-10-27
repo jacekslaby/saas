@@ -60,49 +60,53 @@ public class SaasV1ControllerTest {
         // Let's prepare our test input request in JSON.
         String eventTimeString = "2018-10-19T13:44:56.334+02:00";
         long eventTime = OffsetDateTime.parse(eventTimeString).toInstant().toEpochMilli();
-        AlarmDTOAdditionalProperties alarmDTOAdditionalProperties = new AlarmDTOAdditionalProperties();
-        alarmDTOAdditionalProperties.put("additional_text", "Detailed information");
-        alarmDTOAdditionalProperties.put("managed_object_instance", "BTS:333");
-        AlarmDTO alarmDto = new AlarmDTO()
+        AlarmDTOAdditionalProperties alarmDTOAdditionalPropertiesForApi = new AlarmDTOAdditionalProperties();
+        alarmDTOAdditionalPropertiesForApi.put("additional_text", "Detailed information");
+        alarmDTOAdditionalPropertiesForApi.put("managed_object_instance", "BTS:333");
+        AlarmDTO alarmDtoForApi = new AlarmDTO()
                 .notificationIdentifier(ALARM_NOID)
                 .eventTime(eventTimeString)
                 .perceivedSeverity(1)
-                .additionalProperties(alarmDTOAdditionalProperties);
+                .additionalProperties(alarmDTOAdditionalPropertiesForApi);
         CreateAlarm createAlarmRequest = new CreateAlarm()
                 .requestType(CreateAlarm.RequestTypeEnum.CREATEALARM)
-                .alarmDto(alarmDto);
+                .alarmDto(alarmDtoForApi);
         ObjectMapper mapper = new ObjectMapper();
         String requestJson = mapper.writeValueAsString(createAlarmRequest);
 
-        // Let's post a create request.
-        saas.createRequest(DOMAIN, ADAPTER_NAME, requestJson);
-
-        // Expected request to be generated.
-        Map<CharSequence,CharSequence> alarmDTO = new HashMap<>();
-        alarmDTO.put("notification_identifier", ALARM_NOID);
-        alarmDTO.put("perceived_severity", "1");
+        // Let's prepare the expected request. (i.e. expected to be generated and saved in Dao)
+        Map<CharSequence,CharSequence> alarmDtoForDao = new HashMap<>();
+        alarmDtoForDao.put(Definitions.ALARM_ATTRIBUTE_NAME__EVENT_TIME, eventTimeString);
+        alarmDtoForDao.put(Definitions.ALARM_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, ALARM_NOID);
+        alarmDtoForDao.put(Definitions.ALARM_ATTRIBUTE_NAME__PERCEIVED_SEVERITY, "1");
+        alarmDtoForDao.putAll(alarmDTOAdditionalPropertiesForApi);
         CreateEntityRequest request = CreateEntityRequest.newBuilder()
-                .setUuid("foo")  // we expect it to be overwritten  (it is required in schema so we must provide it here)
-                .setEntryDate(1)  // we expect it to be overwritten  (it is required in schema so we must provide it here)
+                .setUuid("foo")  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
+                .setEntryDate(1)  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
                 .setEntityDomainName(DOMAIN)
                 .setEntitySubdomainName(ADAPTER_NAME)
                 .setEntityIdInSubdomain(ALARM_NOID)
-                .setEntityAttributes(alarmDTO)
+                .setEntityAttributes(alarmDtoForDao)
                 .setEventDate(eventTime)
                 .setLineageStartDate(null)
                 .build();
 
+        // Let's post a create request.
+        saas.createRequest(DOMAIN, ADAPTER_NAME, requestJson);
+
         // Let's verify that it was saved in Dao:
         //
         // - some fields should be equal:
-        verify(saasDaoMock).createRequest(refEq(request, "uuid", "entry_date"));
+        verify(saasDaoMock).createRequest(refEq(request,
+                Definitions.DAO_SCHEMA_REQUEST__UUID, Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE)); // fields excluded from comparison
         //
         // - other fields should be auto-generated
         ArgumentCaptor<CreateEntityRequest> argument = ArgumentCaptor.forClass(CreateEntityRequest.class);
         verify(saasDaoMock).createRequest(argument.capture());
         assertTrue("proper uuid should be generated", UUID.fromString(argument.getValue().getUuid().toString()).version() > 0);
-        assertThat("entry_date", argument.getValue().getEntryDate(), lessThanOrEqualTo(System.currentTimeMillis()));
+        assertThat(Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE,
+                argument.getValue().getEntryDate(), lessThanOrEqualTo(System.currentTimeMillis()));
     }
 
     @Test
