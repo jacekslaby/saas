@@ -2,6 +2,7 @@ package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.model.CreateEntityRequest;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +21,11 @@ public class SaasDaoKafka implements SaasDao {
     private static final Logger logger = LoggerFactory.getLogger(SaasDaoKafka.class);
 
     private String topicName;
-    private KafkaProducer<String, byte[]> producer;
+    private KafkaProducer<String, Object> producer;
 
     /**
      * Note: Autowire - The idea is that it is possible to create a new class annotated as @Configuration
-     *  and this class will get autowired here. (btw: In this class it is important remember about a destroy method to close a producer.)
+     *  and this class will get autowired here. (btw: In this class it is important to remember about a destroy method to close a producer.)
      */
     @Autowired
     SaasDaoKafka(KafkaConnector connector) {
@@ -34,6 +35,9 @@ public class SaasDaoKafka implements SaasDao {
 
     @Override
     public void createRequest(CreateEntityRequest request) {
+        ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
+        this.producer.send(record);
 
+        // @TODO introduce transactions (btw: and idempotency comes with transactions)
     }
 }

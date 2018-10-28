@@ -1,5 +1,6 @@
 package com.j9soft.saas.alarms;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 
@@ -13,7 +14,7 @@ public class SaasDaoKafkaTest {
 
     private static RaasDaoKafkaTestConfiguration testConfig;
     protected SaasDao kafkaDao;
-    private RaasDaoTestScenarios scenarios;
+    private RaasDaoTestScenarios scenarios;  // TODO throw away ?
 
     @BeforeClass
     public static void init() throws IOException {
@@ -43,8 +44,11 @@ public class SaasDaoKafkaTest {
     }
 
     @Test
-    public void t1_todo() {
-        scenarios.t1_todo();
+    public void whenReceivedCreateRequest_itIsSavedToKafka() throws JsonProcessingException {
+
+        TestCreateEntityRequest testCreateEntityRequest = new TestCreateEntityRequest().build();
+
+        kafkaDao.createRequest(testCreateEntityRequest.getRequestObject());
     }
 
 }

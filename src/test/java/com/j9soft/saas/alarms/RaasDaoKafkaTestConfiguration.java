@@ -21,10 +21,10 @@ public class RaasDaoKafkaTestConfiguration {
             new AlarmDetails("ala", "ma", "kota", "{\"moIdentifier\":\"kot\"}");
 
 
-    private KafkaConnector client;
+    private KafkaTestConnector client;
 
     public RaasDaoKafkaTestConfiguration() {
-        client = new KafkaConnector();
+        client = new KafkaTestConnector();
         client.connect("127.0.0.1", 9092);
     }
 

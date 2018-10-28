@@ -15,6 +15,13 @@
     <version>2.0.3.RELEASE</version>
   </parent>
 
+  <repositories>
+    <repository>
+      <id>confluent</id>
+      <url>https://packages.confluent.io/maven/</url>
+    </repository>
+  </repositories>
+
   <dependencies>
     <!-- https://mvnrepository.com/artifact/org.springframework/spring-test -->
     <dependency>
@@ -125,6 +132,16 @@
       <artifactId>swagger-annotations</artifactId>
       <version>1.5.3</version>
       <scope>test</scope>
+    </dependency>
+
+    <!-- https://groups.google.com/forum/#!topic/confluent-platform/Rnz0n1S7pLA
+         '5.0.0' - https://aseigneurin.github.io/2018/08/02/kafka-tutorial-4-avro-and-schema-registry.html
+         https://stackoverflow.com/questions/43488853/confluent-maven-repository-not-working#43489639
+    -->
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-avro-serializer</artifactId>
+      <version>5.0.0</version>
     </dependency>
   </dependencies>
   
