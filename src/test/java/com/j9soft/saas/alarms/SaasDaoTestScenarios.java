@@ -5,11 +5,11 @@ import static junit.framework.TestCase.fail;
 /*
  * Test scenarios that can be reused to test different DAOs.
  */
-public class RaasDaoTestScenarios {
+public class SaasDaoTestScenarios {
 
     private SaasDao dao;
 
-    RaasDaoTestScenarios(SaasDao dao) {
+    SaasDaoTestScenarios(SaasDao dao) {
         this.dao = dao;
     }
 

@@ -13,7 +13,7 @@ import javax.servlet.Filter;
  * Based on Spring Boot annotations all required dependencies are injected (autowired).
  */
 @SpringBootApplication
-public class RaasApplication {
+public class SaasApplication {
 
     @Autowired
     private AuthorizationHeaderJwtFilter authorizationHeaderFilter;   // based on Spring Profile we have here a filter with/without JWT token verification
@@ -29,6 +29,6 @@ public class RaasApplication {
 
     public static void main(String[] args) {
 
-        SpringApplication.run(RaasApplication.class, args);
+        SpringApplication.run(SaasApplication.class, args);
     }
 }

@@ -15,7 +15,7 @@ import java.nio.file.Files;
 import java.util.Properties;
 
 
-public class RaasDaoKafkaTestEmbeddedBroker {
+public class SaasDaoKafkaTestEmbeddedBroker {
 
     private static final String ZKHOST = "127.0.0.1";
     private static final String BROKERHOST = "127.0.0.1";

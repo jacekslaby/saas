@@ -10,22 +10,21 @@ import java.io.IOException;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SaasDaoKafkaTest {
 
-    private static RaasDaoKafkaTestEmbeddedBroker embeddedBroker;
+    private static SaasDaoKafkaTestEmbeddedBroker embeddedBroker;
 
-    private static RaasDaoKafkaTestConfiguration testConfig;
+    private static SaasDaoKafkaTestConfiguration testConfig;
     protected SaasDao kafkaDao;
-    private RaasDaoTestScenarios scenarios;  // TODO throw away ?
 
     @BeforeClass
     public static void init() throws IOException {
 
         // Start an embedded Kafka Server
         //
-        embeddedBroker = new RaasDaoKafkaTestEmbeddedBroker();
+        embeddedBroker = new SaasDaoKafkaTestEmbeddedBroker();
         embeddedBroker.init();
 
         // Connect to the embedded Kafka.
-        testConfig = new RaasDaoKafkaTestConfiguration();
+        testConfig = new SaasDaoKafkaTestConfiguration();
 
         embeddedBroker.createTopic(testConfig.getTopicName());
     }
@@ -40,7 +39,6 @@ public class SaasDaoKafkaTest {
     public void initDao() {
         // Create bean to be tested.
         this.kafkaDao = testConfig.getDao();
-        scenarios = new RaasDaoTestScenarios(this.kafkaDao);
     }
 
     @Test

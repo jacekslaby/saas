@@ -8,11 +8,11 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SaasDaoDevMockTest {
 
-    private static RaasDaoTestScenarios scenarios;
+    private static SaasDaoTestScenarios scenarios;
 
     @BeforeClass
     public static void initDao() {
-        scenarios = new RaasDaoTestScenarios( new SaasDaoDevMock() );
+        scenarios = new SaasDaoTestScenarios( new SaasDaoDevMock() );
     }
 
     @Test
