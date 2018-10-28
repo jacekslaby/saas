@@ -53,7 +53,8 @@ public class SaasV1Controller implements SaasV1 {
                               @PathVariable("adapterName") String adapterName,
                               @RequestBody String requestDTOAsJson) {
 
-        logger.info("createRequest(domainName='{}', adapterName='{}')", domainName, adapterName);
+        logger.info("createRequest(domainName='{}', adapterName='{}') - requestDTOAsJson:'{}'",
+                domainName, adapterName, requestDTOAsJson);
 
         // @TODO validate requestDTOAsJson  (using OpenAPI specification)
         //
