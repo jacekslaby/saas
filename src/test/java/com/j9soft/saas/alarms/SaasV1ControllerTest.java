@@ -3,6 +3,7 @@ package com.j9soft.saas.alarms;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.j9soft.saas.alarms.model.CreateEntityRequest;
 import com.j9soft.saas.alarms.model.Definitions;
+import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -48,7 +49,7 @@ public class SaasV1ControllerTest {
 
         TestCreateEntityRequest testCreateEntityRequest = new TestCreateEntityRequest().build();
 
-        // Let's POST a create request.
+        // Let's POST a create entity request.
         saas.createRequest(testCreateEntityRequest.getDomain(), testCreateEntityRequest.getAdapterName(),
                 testCreateEntityRequest.getRequestJson());
 
@@ -70,7 +71,25 @@ public class SaasV1ControllerTest {
     @Test
     public void t2_whenPostedDeleteAlarmRequest_itIsSavedToDao() {
 
-        fail("TODO");
+        TestDeleteEntityRequest testEntityRequest = new TestDeleteEntityRequest().build();
+
+        // Let's POST a delete entity request.
+        saas.createRequest(testEntityRequest.getDomain(), testEntityRequest.getAdapterName(),
+                testEntityRequest.getRequestJson());
+
+        // Let's verify that it was saved in Dao:
+        //
+        // - some fields should be equal:
+        verify(saasDaoMock).createRequest(
+                refEq(testEntityRequest.getRequestObject(),
+                        Definitions.DAO_SCHEMA_REQUEST__UUID, Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE)); // fields excluded from comparison
+        //
+        // - other fields should be auto-generated
+        ArgumentCaptor<DeleteEntityRequestV1> argument = ArgumentCaptor.forClass(DeleteEntityRequestV1.class);
+        verify(saasDaoMock).createRequest(argument.capture());
+        assertTrue("proper uuid should be generated", UUID.fromString(argument.getValue().getUuid().toString()).version() > 0);
+        assertThat(Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE,
+                argument.getValue().getEntryDate(), lessThanOrEqualTo(System.currentTimeMillis()));
     }
 
     @Test

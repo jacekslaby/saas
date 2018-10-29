@@ -1,6 +1,7 @@
 package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.model.CreateEntityRequest;
+import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -35,6 +36,15 @@ public class SaasDaoKafka implements SaasDao {
 
     @Override
     public void createRequest(CreateEntityRequest request) {
+        ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
+        this.producer.send(record);
+
+        // @TODO introduce transactions (btw: and idempotency comes with transactions)
+    }
+
+    @Override
+    public void createRequest(DeleteEntityRequestV1 request) {
+
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record);
 

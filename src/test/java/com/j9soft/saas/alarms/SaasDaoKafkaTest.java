@@ -47,11 +47,19 @@ public class SaasDaoKafkaTest {
     }
 
     @Test
-    public void whenReceivedCreateRequest_itIsSavedToKafka() throws JsonProcessingException {
+    public void t1_whenReceivedCreateRequest_itIsSavedToKafka() throws JsonProcessingException {
 
-        TestCreateEntityRequest testCreateEntityRequest = new TestCreateEntityRequest().build();
+        TestCreateEntityRequest testEntityRequest = new TestCreateEntityRequest().build();
 
-        kafkaDao.createRequest(testCreateEntityRequest.getRequestObject());
+        kafkaDao.createRequest(testEntityRequest.getRequestObject());
+    }
+
+    @Test
+    public void t2_whenReceivedDeleteRequest_itIsSavedToKafka() throws JsonProcessingException {
+
+        TestDeleteEntityRequest testEntityRequest = new TestDeleteEntityRequest().build();
+
+        kafkaDao.createRequest(testEntityRequest.getRequestObject());
     }
 
 }

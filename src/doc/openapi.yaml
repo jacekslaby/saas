@@ -167,6 +167,12 @@ components:
             notification_identifier:
               type: string
               example: "eric2g:south:34566"
+            event_time:
+              description: Instant when this alarm was removed. (i.e. according to wall time)
+              type: string
+              format: dateTime
+              example:   # "See https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#date.and.time.format.examples"
+                "2018-10-19T13:44:56.334+02:00"
           required: 
             - notification_identifier
       required: 
@@ -209,6 +215,7 @@ components:
           type: string
           example: "eric2g:south:34566"
         event_time:
+          description: Instant when this alarm was created/updated. (i.e. according to wall time)
           type: string
           format: dateTime
           example:   # "See https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#date.and.time.format.examples"

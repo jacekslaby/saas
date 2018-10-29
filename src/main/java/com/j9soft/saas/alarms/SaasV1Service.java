@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.j9soft.saas.alarms.model.CreateEntityRequest;
 import com.j9soft.saas.alarms.model.Definitions;
+import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -50,9 +51,13 @@ public class SaasV1Service {
         // Translate to schemas used in Saas (i.e. to schemas used in Kafka topic)
         //  and forward the result request object to Dao.
         //
-        switch (requestType) {
+        switch (requestType) {  // i.e. based on string enum value defined in OpenAPI yaml specification.
             case "CreateAlarm":
                 createEntityRequest(this.saasDao, domainName, adapterName,
+                        Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
+                break;
+            case "DeleteAlarm":
+                deleteEntityRequest(this.saasDao, domainName, adapterName,
                         Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
                 break;
             default:
@@ -131,6 +136,39 @@ public class SaasV1Service {
                 .setEntityIdInSubdomain(notificationIdentifierNode.textValue())
                 .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .setEntityAttributes(alarmAttributes)
+                .build();
+
+        // Forward to Dao.
+        saasDao.createRequest(request);
+    }
+
+    private void deleteEntityRequest(SaasDao saasDao, String domainName, String adapterName,
+                                     String entityTypeName, JsonNode requestDTORootNode) {
+
+        JsonNode alarmDtoNode = requestDTORootNode.path(API_SCHEMA_ALARM__ALARM_DTO);
+        if (alarmDtoNode.isMissingNode()) {
+            throw new RuntimeException("@TODO: better exception handling");
+        }
+
+        JsonNode notificationIdentifierNode = alarmDtoNode.path(API_SCHEMA_ALARM__NOTIFICATION_IDENTIFIER);
+        if (notificationIdentifierNode.isMissingNode() || notificationIdentifierNode.textValue().length() < 1) {
+            throw new RuntimeException("@TODO: better exception handling");
+        }
+
+        JsonNode eventTimeNode = alarmDtoNode.path(API_SCHEMA_ALARM__EVENT_TIME);
+        if (eventTimeNode.isMissingNode() || eventTimeNode.textValue().length() < 1) {
+            throw new RuntimeException("@TODO: better exception handling");
+        }
+        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(eventTimeNode.textValue()); // https://stackoverflow.com/questions/6038136/how-do-i-parse-rfc-3339-datetimes-with-java#6038922
+
+        DeleteEntityRequestV1 request = DeleteEntityRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(System.currentTimeMillis())
+                .setEntityTypeName(entityTypeName)
+                .setEntityDomainName(domainName)
+                .setEntitySubdomainName(adapterName)
+                .setEntityIdInSubdomain(notificationIdentifierNode.textValue())
+                .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
 
         // Forward to Dao.
