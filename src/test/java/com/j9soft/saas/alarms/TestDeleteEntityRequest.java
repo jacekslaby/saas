@@ -1,14 +1,12 @@
 package com.j9soft.saas.alarms;
 
 import com.google.gson.Gson;
-import com.j9soft.saas.alarms.model.CreateEntityRequest;
 import com.j9soft.saas.alarms.model.Definitions;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
-import org.openapitools.client.model.*;
+import org.openapitools.client.model.DeleteAlarm;
+import org.openapitools.client.model.DeleteAlarmAlarmDto;
 
 import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 class TestDeleteEntityRequest {
     public static final String DOMAIN = "controllerTest";

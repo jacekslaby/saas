@@ -1,7 +1,7 @@
 package com.j9soft.saas.alarms;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.j9soft.saas.alarms.model.CreateEntityRequest;
+import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.Definitions;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
 import org.junit.Before;
@@ -61,7 +61,7 @@ public class SaasV1ControllerTest {
                         Definitions.DAO_SCHEMA_REQUEST__UUID, Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE)); // fields excluded from comparison
         //
         // - other fields should be auto-generated
-        ArgumentCaptor<CreateEntityRequest> argument = ArgumentCaptor.forClass(CreateEntityRequest.class);
+        ArgumentCaptor<CreateEntityRequestV1> argument = ArgumentCaptor.forClass(CreateEntityRequestV1.class);
         verify(saasDaoMock).createRequest(argument.capture());
         assertTrue("proper uuid should be generated", UUID.fromString(argument.getValue().getUuid().toString()).version() > 0);
         assertThat(Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE,

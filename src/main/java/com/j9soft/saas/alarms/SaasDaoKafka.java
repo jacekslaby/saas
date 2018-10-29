@@ -1,6 +1,6 @@
 package com.j9soft.saas.alarms;
 
-import com.j9soft.saas.alarms.model.CreateEntityRequest;
+import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -35,7 +35,7 @@ public class SaasDaoKafka implements SaasDao {
     }
 
     @Override
-    public void createRequest(CreateEntityRequest request) {
+    public void createRequest(CreateEntityRequestV1 request) {
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record);
 

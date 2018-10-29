@@ -1,7 +1,8 @@
 package com.j9soft.saas.alarms;
 
 import com.google.gson.Gson;
-import com.j9soft.saas.alarms.model.CreateEntityRequest;
+import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
+import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.Definitions;
 import org.openapitools.client.model.AlarmDTO;
 import org.openapitools.client.model.AlarmDTOAdditionalProperties;
@@ -18,13 +19,13 @@ class TestCreateEntityRequest {
     private static final String ALARM_NOID = "eric2g:341";
 
     private String requestJson;
-    private CreateEntityRequest request;
+    private CreateEntityRequestV1 request;
 
     public String getRequestJson() {
         return requestJson;
     }
 
-    public CreateEntityRequest getRequestObject() {
+    public CreateEntityRequestV1 getRequestObject() {
         return request;
     }
 
@@ -61,7 +62,7 @@ class TestCreateEntityRequest {
         alarmDtoForDao.put(Definitions.ALARM_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, ALARM_NOID);
         alarmDtoForDao.put(Definitions.ALARM_ATTRIBUTE_NAME__PERCEIVED_SEVERITY, "1");
         alarmDtoForDao.putAll(alarmDTOAdditionalPropertiesForApi);
-        request = CreateEntityRequest.newBuilder()
+        request = CreateEntityRequestV1.newBuilder()
                 .setUuid("foo")  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntryDate(1)  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)

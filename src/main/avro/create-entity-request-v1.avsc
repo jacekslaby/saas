@@ -1,6 +1,7 @@
 {"namespace": "com.j9soft.saas.alarms.model",
   "type": "record",
-  "name": "CreateEntityRequest",
+  "name": "CreateEntityRequestV1",
+  "doc": "Type for requests which create a new entity. Note: Evolution of this schema (i.e. changes to this type) _strictly_ maintains it full compatible. Full compatibility means schemas are backward and forward compatible. Note: Not compatible changes require defining a new type (schema), e.g. 'V2', 'V3', etc.",
   "fields": [
     {"name": "uuid", "type": "string", "doc": "UUID of this request"},
     {"name": "entry_date", "type": "long", "doc": "The date and time at which the request entered the system (i.e., was created). The value of this attribute is a number that represents the number of milliseconds since midnight, Jan. 1, 1970 (UTC)."},

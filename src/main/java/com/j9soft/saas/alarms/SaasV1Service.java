@@ -2,7 +2,7 @@ package com.j9soft.saas.alarms;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.j9soft.saas.alarms.model.CreateEntityRequest;
+import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.Definitions;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,7 +127,7 @@ public class SaasV1Service {
         //  (BUT where it is needed these types and their format may be enforced by Alarm REST service.
         //   The REST service is easier to evolve and is dedicated to Source Alarms.)
         //
-        CreateEntityRequest request = CreateEntityRequest.newBuilder()
+        CreateEntityRequestV1 request = CreateEntityRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
                 .setEntityTypeName(entityTypeName)
