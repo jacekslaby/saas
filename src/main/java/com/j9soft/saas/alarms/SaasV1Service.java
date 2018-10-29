@@ -3,8 +3,11 @@ package com.j9soft.saas.alarms;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.j9soft.saas.alarms.model.CreateEntityRequest;
+import com.j9soft.saas.alarms.model.Definitions;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +17,50 @@ import static com.j9soft.saas.alarms.model.Definitions.*;
 
 @Service
 public class SaasV1Service {
-    public void createEntityRequest(SaasDao saasDao, String domainName, String adapterName,
+
+    // @Autowired  - is not used because:
+    // https://spring.io/blog/2016/04/15/testing-improvements-in-spring-boot-1-4
+    // "Don’t use field injection as it just makes your tests harder to write."
+    //
+    private final SaasDao saasDao;
+
+    @Autowired
+    SaasV1Service(SaasDao saasDao) {
+
+        this.saasDao = saasDao;
+    }
+
+    void createRequest(String domainName, String adapterName, String requestDTOAsJson) {
+        // @TODO validate requestDTOAsJson  (using OpenAPI specification)
+        //
+        ObjectMapper mapper = new ObjectMapper();  // @TODO for performance reasons we should share ObjectMapper instance
+        JsonNode rootNode;
+        try {
+            rootNode = mapper.readTree(requestDTOAsJson);
+        } catch (IOException e) {
+            throw new RuntimeException("@TODO better exception handling and returning results", e);
+        }
+        JsonNode requestTypeNode = rootNode.path("request_type");
+        if (requestTypeNode.isMissingNode()) {
+            throw new RuntimeException("@TODO: better exception handling: rootNode JSON: " + rootNode.asText());
+        }
+        String requestType = requestTypeNode.asText();
+
+
+        // Translate to schemas used in Saas (i.e. to schemas used in Kafka topic)
+        //  and forward the result request object to Dao.
+        //
+        switch (requestType) {
+            case "CreateAlarm":
+                createEntityRequest(this.saasDao, domainName, adapterName,
+                        Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
+                break;
+            default:
+                throw new RuntimeException("@TODO better exception handling and returning results: " + requestType);
+        }
+    }
+
+    private void createEntityRequest(SaasDao saasDao, String domainName, String adapterName,
                                     String entityTypeName, JsonNode requestDTORootNode) {
 
         JsonNode alarmDtoNode = requestDTORootNode.path(API_SCHEMA_ALARM__ALARM_DTO);
@@ -55,8 +101,9 @@ public class SaasV1Service {
         alarmAttributes.put(ALARM_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, notificationIdentifierNode.textValue());
         alarmAttributes.put(ALARM_ATTRIBUTE_NAME__PERCEIVED_SEVERITY, String.valueOf(perceivedSeverityNode.intValue()));
 
-        // Question: Why do we use CreateEntityRequest and not CreateSourceAlarmRequest ?
-        // Answer: Topic is for generic entities (e.g. Alarms, other objects)
+        // Question: Why do we use a generic CreateEntityRequest type instead of a specialized CreateSourceAlarmRequest ?
+        //
+        // Answer: The target Topic is for _generic_ entities (e.g. Alarms, other objects)
         //  and generic subdomains (e.g. Adapters, other groups of objects). That is why we have:
         //   CreateEntityRequest(uuid,entityTypeName(string)=SourceAlarm,domainName,subdomainName=adapterName,lineageStartDate,entityIdInSubdomain=notificationIdentifier,attributesMap)
         //   ResyncAllStartSubdomainRequest(uuid,subdomainName=adapterName,entityTypeName(string)=SourceAlarm)

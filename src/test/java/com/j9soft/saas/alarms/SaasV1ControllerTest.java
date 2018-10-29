@@ -22,6 +22,9 @@ import static org.mockito.Mockito.verify;
 /*
  * I assume it is enough to test controller methods without testing HTTP wiring. (i.e. without TestRestTemplate, etc.)
  * (See also: https://spring.io/guides/gs/spring-boot/  @Autowired private TestRestTemplate template;  )
+ *
+ * The tests from this class verify whether expected operations are executed on SassDao instance
+ * as a result of a HTTP request.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SaasV1ControllerTest {
@@ -32,20 +35,20 @@ public class SaasV1ControllerTest {
     @Before
     public void initRaas() {
 
-        // Let's register what should be returned.
+        // Let's create a Dao mock which will be checked for expected operation calls.
         //
         saasDaoMock = Mockito.mock(SaasDao.class);
 
         // Let's create the tested bean.
-        saas = new SaasV1Controller(this.saasDaoMock, new SaasV1Service()); // @TODO think about encapsulated autowire for SaasV1Service
+        saas = new SaasV1Controller(new SaasV1Service(this.saasDaoMock));
     }
 
     @Test
-    public void whenPostedCreateAlarmRequest_itIsSavedToDao() throws JsonProcessingException {
+    public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() throws JsonProcessingException {
 
         TestCreateEntityRequest testCreateEntityRequest = new TestCreateEntityRequest().build();
 
-        // Let's post a create request.
+        // Let's POST a create request.
         saas.createRequest(testCreateEntityRequest.getDomain(), testCreateEntityRequest.getAdapterName(),
                 testCreateEntityRequest.getRequestJson());
 
@@ -65,19 +68,19 @@ public class SaasV1ControllerTest {
     }
 
     @Test
-    public void whenPostedDeleteAlarmRequest_itIsSavedToDao() {
+    public void t2_whenPostedDeleteAlarmRequest_itIsSavedToDao() {
 
         fail("TODO");
     }
 
     @Test
-    public void whenPostedBunchOfRequests_theyAreSavedToDao() {
+    public void t3_whenPostedBunchOfRequests_theyAreSavedToDao() {
 
         fail("TODO");
     }
 
     @Test
-    public void whenPostedResyncRequests_theyAreSavedToDao() {
+    public void t4_whenPostedResyncRequests_theyAreSavedToDao() {
 
         fail("TODO");
     }

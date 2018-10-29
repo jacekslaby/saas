@@ -7,12 +7,17 @@ import org.junit.runners.MethodSorters;
 import java.io.IOException;
 
 
+/*
+ * The tests from this class verify whether ProducerRecords are correctly prepared to be send to a Kafka topic
+ * when a method of SaasDaoKafka is invoked.
+ */
+
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SaasDaoKafkaTest {
 
     private static SaasDaoKafkaTestEmbeddedBroker embeddedBroker;
-
     private static SaasDaoKafkaTestConfiguration testConfig;
+
     protected SaasDao kafkaDao;
 
     @BeforeClass
