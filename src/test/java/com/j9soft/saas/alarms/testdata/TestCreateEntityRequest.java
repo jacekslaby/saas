@@ -1,10 +1,8 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.testdata;
 
 import com.google.gson.Gson;
 import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
-import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.Definitions;
-import com.j9soft.saas.alarms.testdata.TestRequestData;
 import org.openapitools.client.model.AlarmDTO;
 import org.openapitools.client.model.AlarmDTOAdditionalProperties;
 import org.openapitools.client.model.CreateAlarm;
@@ -13,12 +11,14 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-class TestCreateEntityRequest extends TestRequestData {
+public class TestCreateEntityRequest extends TestRequestData {
 
     private static final String ALARM_NOID = "eric2g:341";
 
     private String requestJson;
     private CreateEntityRequestV1 request;
+
+    private TestCreateEntityRequest() {}
 
     @Override
     public String getRequestJson() {
@@ -29,7 +29,9 @@ class TestCreateEntityRequest extends TestRequestData {
         return request;
     }
 
-    public TestCreateEntityRequest build() {
+    public static TestCreateEntityRequest build() {
+        TestCreateEntityRequest result = new TestCreateEntityRequest();
+
         // Let's prepare our test input request in JSON.
         String eventTimeString = "2018-10-19T13:44:56.334+02:00";
         long eventTime = OffsetDateTime.parse(eventTimeString).toInstant().toEpochMilli();
@@ -50,7 +52,7 @@ class TestCreateEntityRequest extends TestRequestData {
         //  (btw: with com.fasterxml.jackson.databind.ObjectMapper there were camel names in JSON,
         //    i.e. as field names e.g. "requestType" instead of 'request_type'.)
         Gson gson = new Gson();
-        requestJson = gson.toJson(createAlarmRequest);
+        result.requestJson = gson.toJson(createAlarmRequest);
 
         // Let's prepare the expected request. (i.e. expected to be generated and saved in Dao)
         Map<CharSequence,CharSequence> alarmDtoForDao = new HashMap<>();
@@ -58,7 +60,7 @@ class TestCreateEntityRequest extends TestRequestData {
         alarmDtoForDao.put(Definitions.ALARM_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, ALARM_NOID);
         alarmDtoForDao.put(Definitions.ALARM_ATTRIBUTE_NAME__PERCEIVED_SEVERITY, "1");
         alarmDtoForDao.putAll(alarmDTOAdditionalPropertiesForApi);
-        request = CreateEntityRequestV1.newBuilder()
+        result.request = CreateEntityRequestV1.newBuilder()
                 .setUuid("foo")  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntryDate(1)  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
@@ -69,6 +71,7 @@ class TestCreateEntityRequest extends TestRequestData {
                 .setEventDate(eventTime)
                 .setLineageStartDate(null)
                 .build();
-        return this;
+
+        return result;
     }
 }

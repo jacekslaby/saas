@@ -1,10 +1,7 @@
 package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.model.Definitions;
-import com.j9soft.saas.alarms.testdata.CapturedRequestChecker;
-import com.j9soft.saas.alarms.testdata.TestRequestData;
-import com.j9soft.saas.alarms.testdata.TestResyncAllEndSubdomainRequest;
-import com.j9soft.saas.alarms.testdata.TestResyncAllStartSubdomainRequest;
+import com.j9soft.saas.alarms.testdata.*;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -50,7 +47,7 @@ public class SaasV1ControllerTest {
     @Test
     public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() {
 
-        TestCreateEntityRequest testRequest = new TestCreateEntityRequest().build();  // @TODO correct build() to be static method
+        TestCreateEntityRequest testRequest = TestCreateEntityRequest.build();
         checker.addCreateEntityRequest( testRequest.getRequestObject() );
 
         postAndVerifyRequest(testRequest);
@@ -59,7 +56,7 @@ public class SaasV1ControllerTest {
     @Test
     public void t2_whenPostedDeleteAlarmRequest_itIsSavedToDao() {
 
-        TestDeleteEntityRequest testRequest = new TestDeleteEntityRequest().build();  // @TODO correct build() to be static method
+        TestDeleteEntityRequest testRequest = TestDeleteEntityRequest.build();
         checker.addDeleteEntityRequest( testRequest.getRequestObject() );
 
         postAndVerifyRequest(testRequest);
@@ -74,8 +71,8 @@ public class SaasV1ControllerTest {
     @Test
     public void t4_whenPostedResyncRequests_theyAreSavedToDao() {
 
-        TestResyncAllStartSubdomainRequest testStartRequest = new TestResyncAllStartSubdomainRequest().build();
-        TestResyncAllEndSubdomainRequest testEndRequest = new TestResyncAllEndSubdomainRequest().build();
+        TestResyncAllStartSubdomainRequest testStartRequest = TestResyncAllStartSubdomainRequest.build();
+        TestResyncAllEndSubdomainRequest testEndRequest = TestResyncAllEndSubdomainRequest.build();
 
         // Let's POST list with both requests.
         saas.createRequestsWithList(testStartRequest.getDomain(), testStartRequest.getAdapterName(),

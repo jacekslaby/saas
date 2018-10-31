@@ -21,11 +21,15 @@ public class TestResyncAllEndSubdomainRequest {
         return request;
     }
 
+    private TestResyncAllEndSubdomainRequest() {}
+
     public String getDomain() { return DOMAIN; }
 
     public String getAdapterName() { return ADAPTER_NAME; }
 
-    public TestResyncAllEndSubdomainRequest build() {
+    public static TestResyncAllEndSubdomainRequest build() {
+        TestResyncAllEndSubdomainRequest result = new TestResyncAllEndSubdomainRequest();
+
         // Let's prepare our test input request in JSON.
         ResyncAllEnd openApiRequest = new ResyncAllEnd()
                 .requestType(ResyncAllEnd.RequestTypeEnum.RESYNCALLEND);
@@ -35,10 +39,10 @@ public class TestResyncAllEndSubdomainRequest {
         //  (btw: with com.fasterxml.jackson.databind.ObjectMapper there were camel names in JSON,
         //    i.e. as field names e.g. "requestType" instead of 'request_type'.)
         Gson gson = new Gson();
-        requestJson = gson.toJson(openApiRequest);
+        result.requestJson = gson.toJson(openApiRequest);
 
         // Let's prepare the expected request. (i.e. expected to be generated and saved in Dao)
-        request = ResyncAllEndSubdomainRequestV1.newBuilder()
+        result.request = ResyncAllEndSubdomainRequestV1.newBuilder()
                 .setUuid("foo")  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntryDate(1)  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
@@ -47,6 +51,7 @@ public class TestResyncAllEndSubdomainRequest {
                 .setEventDate(Long.valueOf(1))  // we expect it to be overwritten
                 .setLineageStartDate(null)
                 .build();
-        return this;
+
+        return result;
     }
 }

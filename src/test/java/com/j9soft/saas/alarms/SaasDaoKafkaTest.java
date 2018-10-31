@@ -1,6 +1,8 @@
 package com.j9soft.saas.alarms;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.j9soft.saas.alarms.testdata.TestCreateEntityRequest;
+import com.j9soft.saas.alarms.testdata.TestDeleteEntityRequest;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 
@@ -49,7 +51,7 @@ public class SaasDaoKafkaTest {
     @Test
     public void t1_whenReceivedCreateRequest_itIsSavedToKafka() throws JsonProcessingException {
 
-        TestCreateEntityRequest testEntityRequest = new TestCreateEntityRequest().build();
+        TestCreateEntityRequest testEntityRequest = TestCreateEntityRequest.build();
 
         kafkaDao.createRequest(testEntityRequest.getRequestObject());
     }
@@ -57,7 +59,7 @@ public class SaasDaoKafkaTest {
     @Test
     public void t2_whenReceivedDeleteRequest_itIsSavedToKafka() throws JsonProcessingException {
 
-        TestDeleteEntityRequest testEntityRequest = new TestDeleteEntityRequest().build();
+        TestDeleteEntityRequest testEntityRequest = TestDeleteEntityRequest.build();
 
         kafkaDao.createRequest(testEntityRequest.getRequestObject());
     }

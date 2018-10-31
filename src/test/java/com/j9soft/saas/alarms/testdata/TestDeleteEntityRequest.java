@@ -1,20 +1,21 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.testdata;
 
 import com.google.gson.Gson;
 import com.j9soft.saas.alarms.model.Definitions;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
-import com.j9soft.saas.alarms.testdata.TestRequestData;
 import org.openapitools.client.model.DeleteAlarm;
 import org.openapitools.client.model.DeleteAlarmAlarmDto;
 
 import java.time.OffsetDateTime;
 
-class TestDeleteEntityRequest extends TestRequestData {
+public class TestDeleteEntityRequest extends TestRequestData {
 
     private static final String ALARM_NOID = "eric2g:341";
 
     private String requestJson;
     private DeleteEntityRequestV1 request;
+
+    private TestDeleteEntityRequest() {}
 
     @Override
     public String getRequestJson() {
@@ -25,7 +26,9 @@ class TestDeleteEntityRequest extends TestRequestData {
         return request;
     }
 
-    public TestDeleteEntityRequest build() {
+    public static TestDeleteEntityRequest build() {
+        TestDeleteEntityRequest result = new TestDeleteEntityRequest();
+
         // Let's prepare our test input request in JSON.
         String eventTimeString = "2018-10-19T13:44:56.334+02:00";
         long eventTime = OffsetDateTime.parse(eventTimeString).toInstant().toEpochMilli();
@@ -41,10 +44,10 @@ class TestDeleteEntityRequest extends TestRequestData {
         //  (btw: with com.fasterxml.jackson.databind.ObjectMapper there were camel names in JSON,
         //    i.e. as field names e.g. "requestType" instead of 'request_type'.)
         Gson gson = new Gson();
-        requestJson = gson.toJson(alarmRequest);
+        result.requestJson = gson.toJson(alarmRequest);
 
         // Let's prepare the expected request. (i.e. expected to be generated and saved in Dao)
-        request = DeleteEntityRequestV1.newBuilder()
+        result.request = DeleteEntityRequestV1.newBuilder()
                 .setUuid("foo")  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntryDate(1)  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
@@ -54,6 +57,7 @@ class TestDeleteEntityRequest extends TestRequestData {
                 .setEventDate(eventTime)
                 .setLineageStartDate(null)
                 .build();
-        return this;
+
+        return result;
     }
 }

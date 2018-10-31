@@ -1,13 +1,13 @@
 package com.j9soft.saas.alarms;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.j9soft.saas.alarms.testdata.TestCreateEntityRequest;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
 
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 
@@ -36,7 +36,7 @@ public class SaasPublisherKafkaTest {
     @Test
     public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() throws JsonProcessingException {
 
-        TestCreateEntityRequest testCreateEntityRequest = new TestCreateEntityRequest().build();
+        TestCreateEntityRequest testCreateEntityRequest = TestCreateEntityRequest.build();
         SaasPublisher.Request request = SaasPublisher.CreateEntityRequest.newBuilder()
                 .setWrappedRequest(testCreateEntityRequest.getRequestObject());
 

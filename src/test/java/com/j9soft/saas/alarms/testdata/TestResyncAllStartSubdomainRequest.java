@@ -13,6 +13,8 @@ public class TestResyncAllStartSubdomainRequest {
     private String requestJson;
     private ResyncAllStartSubdomainRequestV1 request;
 
+    private TestResyncAllStartSubdomainRequest() {}
+
     public String getRequestJson() {
         return requestJson;
     }
@@ -25,7 +27,9 @@ public class TestResyncAllStartSubdomainRequest {
 
     public String getAdapterName() { return ADAPTER_NAME; }
 
-    public TestResyncAllStartSubdomainRequest build() {
+    public static TestResyncAllStartSubdomainRequest build() {
+        TestResyncAllStartSubdomainRequest result = new TestResyncAllStartSubdomainRequest();
+
         // Let's prepare our test input request in JSON.
         ResyncAllStart openApiRequest = new ResyncAllStart()
                 .requestType(ResyncAllStart.RequestTypeEnum.RESYNCALLSTART);
@@ -35,10 +39,10 @@ public class TestResyncAllStartSubdomainRequest {
         //  (btw: with com.fasterxml.jackson.databind.ObjectMapper there were camel names in JSON,
         //    i.e. as field names e.g. "requestType" instead of 'request_type'.)
         Gson gson = new Gson();
-        requestJson = gson.toJson(openApiRequest);
+        result.requestJson = gson.toJson(openApiRequest);
 
         // Let's prepare the expected request. (i.e. expected to be generated and saved in Dao)
-        request = ResyncAllStartSubdomainRequestV1.newBuilder()
+        result.request = ResyncAllStartSubdomainRequestV1.newBuilder()
                 .setUuid("foo")  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntryDate(1)  // we expect it to be overwritten  (it is required in DAO schema so we must provide it here)
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
@@ -47,6 +51,7 @@ public class TestResyncAllStartSubdomainRequest {
                 .setEventDate(Long.valueOf(1))  // we expect it to be overwritten
                 .setLineageStartDate(null)
                 .build();
-        return this;
+
+        return result;
     }
 }
