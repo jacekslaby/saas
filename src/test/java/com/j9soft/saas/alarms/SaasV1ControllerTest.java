@@ -86,7 +86,7 @@ public class SaasV1ControllerTest {
         // - other fields should be auto-generated
 
         ArgumentCaptor<SaasPublisher.Request[]> argument = ArgumentCaptor.forClass(SaasPublisher.Request[].class);
-        verify(saasPublisherMock).createRequestsWithList(argument.capture());
+        verify(saasPublisherMock).publishRequestsWithArray(argument.capture());
         assertEquals("number of captured requests", argument.getValue().length, 2);
 
         checker.addResyncAllStartSubdomainRequest( testStartRequest.getRequestObject() );
@@ -105,7 +105,7 @@ public class SaasV1ControllerTest {
         // Let's verify that it was published:
         //
         ArgumentCaptor<SaasPublisher.Request> argument = ArgumentCaptor.forClass(SaasPublisher.Request.class);
-        verify(saasPublisherMock).createRequest(argument.capture());
+        verify(saasPublisherMock).publishRequest(argument.capture());
         //
         // Let's verify that expected data were published:
         argument.getValue().accept(checker);

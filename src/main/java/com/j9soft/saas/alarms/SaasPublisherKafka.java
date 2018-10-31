@@ -29,7 +29,7 @@ public class SaasPublisherKafka implements SaasPublisher {
     }
 
     @Override
-    public void createRequest(SaasPublisher.Request request) {
+    public void publishRequest(SaasPublisher.Request request) {
 
         request.accept(this.saasDaoKafka);
 
@@ -37,7 +37,7 @@ public class SaasPublisherKafka implements SaasPublisher {
     }
 
     @Override
-    public void createRequestsWithList(SaasPublisher.Request[] requests) {
+    public void publishRequestsWithArray(SaasPublisher.Request[] requests) {
 
         for (SaasPublisher.Request request: requests) {
             request.accept(this.saasDaoKafka);

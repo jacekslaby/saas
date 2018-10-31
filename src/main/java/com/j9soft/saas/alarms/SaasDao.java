@@ -12,7 +12,7 @@ import com.j9soft.saas.alarms.model.ResyncAllStartSubdomainRequestV1;
  * It is also a Visitor (https://en.wikipedia.org/wiki/Visitor_pattern)
  *  to SaasPublisher.Requests.
  * During a visit (i.e. when a Request accepts a SaasDao in SaasPublisher.Request.accept(SaasDao))
- *  an appropriate method of SaasDao is invoked. (e.g. #createRequest(CreateEntityRequestV1 request)
+ *  an appropriate method of SaasDao is invoked. (e.g. #publishRequest(CreateEntityRequestV1 request)
  */
 public interface SaasDao {
 

@@ -41,7 +41,7 @@ public class SaasPublisherKafkaTest {
                 .setWrappedRequest(testRequest.getRequestObject());
 
         // Let's publish a create entity request.
-        saasPublisher.createRequest(request);
+        saasPublisher.publishRequest(request);
 
         // Let's verify that it was saved in Dao:
         //
@@ -55,8 +55,8 @@ public class SaasPublisherKafkaTest {
         SaasPublisher.Request request = SaasPublisher.DeleteEntityRequest.newBuilder()
                 .setWrappedRequest(testRequest.getRequestObject());
 
-        // Let's publish a create entity request.
-        saasPublisher.createRequest(request);
+        // Let's publish a delete entity request.
+        saasPublisher.publishRequest(request);
 
         // Let's verify that it was saved in Dao:
         //

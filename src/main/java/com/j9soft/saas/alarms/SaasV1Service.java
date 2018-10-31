@@ -52,7 +52,7 @@ public class SaasV1Service {
         SaasPublisher.Request request = createRequestFromJsonNode(domainName, adapterName, rootNode);
 
         // Forward to Dao.
-        saasPublisher.createRequest(request);
+        saasPublisher.publishRequest(request);
     }
 
     private SaasPublisher.Request createRequestFromJsonNode(String domainName, String adapterName, JsonNode rootNode) {
@@ -156,7 +156,7 @@ public class SaasV1Service {
                 .setEntityAttributes(alarmAttributes)
                 .build();
 
-        // Return an object ready for a SaasPublisher visit.
+        // Return an object ready for a SaasDao visit.
         return SaasPublisher.CreateEntityRequest.newBuilder()
                 .setWrappedRequest(request);
     }
@@ -190,7 +190,7 @@ public class SaasV1Service {
                 .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
 
-        // Return an object ready for a SaasPublisher visit.
+        // Return an object ready for a SaasDao visit.
         return SaasPublisher.DeleteEntityRequest.newBuilder()
                 .setWrappedRequest(request);
     }
@@ -208,7 +208,7 @@ public class SaasV1Service {
                 .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
 
-        // Return an object ready for a SaasPublisher visit.
+        // Return an object ready for a SaasDao visit.
         return SaasPublisher.ResyncAllEndSubdomainRequest.newBuilder()
                 .setWrappedRequest(request);
     }
@@ -226,7 +226,7 @@ public class SaasV1Service {
                 .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
 
-        // Return an object ready for a SaasPublisher visit.
+        // Return an object ready for a SaasDao visit.
         return SaasPublisher.ResyncAllStartSubdomainRequest.newBuilder()
                 .setWrappedRequest(request);
     }
@@ -252,6 +252,6 @@ public class SaasV1Service {
         }
 
         // Forward to Dao.
-        saasPublisher.createRequestsWithList(requests);
+        saasPublisher.publishRequestsWithArray(requests);
     }
 }
