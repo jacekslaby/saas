@@ -18,7 +18,7 @@ public class SaasDaoKafkaTest {
     private static SaasDaoKafkaTestEmbeddedBroker embeddedBroker;
     private static SaasDaoKafkaTestConfiguration testConfig;
 
-    protected SaasDao kafkaDao;
+    protected SaasDaoKafka kafkaDao;
 
     @BeforeClass
     public static void init() throws IOException {

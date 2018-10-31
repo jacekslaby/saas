@@ -2,6 +2,8 @@ package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
+import com.j9soft.saas.alarms.model.ResyncAllEndSubdomainRequestV1;
+import com.j9soft.saas.alarms.model.ResyncAllStartSubdomainRequestV1;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -24,4 +26,15 @@ public class SaasDaoDevMock implements SaasDao {
     public void createRequest(DeleteEntityRequestV1 request) {
 
     }
+
+    @Override
+    public void createRequest(ResyncAllStartSubdomainRequestV1 request) {
+
+    }
+
+    @Override
+    public void createRequest(ResyncAllEndSubdomainRequestV1 request) {
+
+    }
+
 }

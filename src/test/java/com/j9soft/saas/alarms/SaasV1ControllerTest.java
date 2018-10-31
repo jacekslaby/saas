@@ -1,9 +1,10 @@
 package com.j9soft.saas.alarms;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.Definitions;
-import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
+import com.j9soft.saas.alarms.testdata.CapturedRequestChecker;
+import com.j9soft.saas.alarms.testdata.TestRequestData;
+import com.j9soft.saas.alarms.testdata.TestResyncAllEndSubdomainRequest;
+import com.j9soft.saas.alarms.testdata.TestResyncAllStartSubdomainRequest;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -13,11 +14,9 @@ import org.mockito.Mockito;
 
 import java.util.UUID;
 
-import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
+import static junit.framework.TestCase.*;
 import static org.hamcrest.number.OrderingComparison.lessThanOrEqualTo;
 import static org.junit.Assert.assertThat;
-import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.verify;
 
 /*
@@ -31,65 +30,39 @@ import static org.mockito.Mockito.verify;
 public class SaasV1ControllerTest {
 
     private SaasV1 saas;
-    private SaasDao saasDaoMock;
+    private SaasPublisher saasPublisherMock;
+    private CapturedRequestChecker checker;
 
     @Before
     public void initRaas() {
 
-        // Let's create a Dao mock which will be checked for expected operation calls.
+        // Let's create a mock which will be checked for expected operation calls.
         //
-        saasDaoMock = Mockito.mock(SaasDao.class);
+        saasPublisherMock = Mockito.mock(SaasPublisher.class);
 
         // Let's create the tested bean.
-        saas = new SaasV1Controller(new SaasV1Service(this.saasDaoMock));
+        saas = new SaasV1Controller(new SaasV1Service(this.saasPublisherMock));
+
+        // Let's create test checker. (i.e. a visitor which will verify that arguments passed to the mock are correct)
+        this.checker = CapturedRequestChecker.newBuilder();
     }
 
     @Test
-    public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() throws JsonProcessingException {
+    public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() {
 
-        TestCreateEntityRequest testCreateEntityRequest = new TestCreateEntityRequest().build();
+        TestCreateEntityRequest testRequest = new TestCreateEntityRequest().build();  // @TODO correct build() to be static method
+        checker.addCreateEntityRequest( testRequest.getRequestObject() );
 
-        // Let's POST a create entity request.
-        saas.createRequest(testCreateEntityRequest.getDomain(), testCreateEntityRequest.getAdapterName(),
-                testCreateEntityRequest.getRequestJson());
-
-        // Let's verify that it was saved in Dao:
-        //
-        // - some fields should be equal:
-        verify(saasDaoMock).createRequest(
-                refEq(testCreateEntityRequest.getRequestObject(),
-                        Definitions.DAO_SCHEMA_REQUEST__UUID, Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE)); // fields excluded from comparison
-        //
-        // - other fields should be auto-generated
-        ArgumentCaptor<CreateEntityRequestV1> argument = ArgumentCaptor.forClass(CreateEntityRequestV1.class);
-        verify(saasDaoMock).createRequest(argument.capture());
-        assertTrue("proper uuid should be generated", UUID.fromString(argument.getValue().getUuid().toString()).version() > 0);
-        assertThat(Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE,
-                argument.getValue().getEntryDate(), lessThanOrEqualTo(System.currentTimeMillis()));
+        postAndVerifyRequest(testRequest);
     }
 
     @Test
     public void t2_whenPostedDeleteAlarmRequest_itIsSavedToDao() {
 
-        TestDeleteEntityRequest testEntityRequest = new TestDeleteEntityRequest().build();
+        TestDeleteEntityRequest testRequest = new TestDeleteEntityRequest().build();  // @TODO correct build() to be static method
+        checker.addDeleteEntityRequest( testRequest.getRequestObject() );
 
-        // Let's POST a delete entity request.
-        saas.createRequest(testEntityRequest.getDomain(), testEntityRequest.getAdapterName(),
-                testEntityRequest.getRequestJson());
-
-        // Let's verify that it was saved in Dao:
-        //
-        // - some fields should be equal:
-        verify(saasDaoMock).createRequest(
-                refEq(testEntityRequest.getRequestObject(),
-                        Definitions.DAO_SCHEMA_REQUEST__UUID, Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE)); // fields excluded from comparison
-        //
-        // - other fields should be auto-generated
-        ArgumentCaptor<DeleteEntityRequestV1> argument = ArgumentCaptor.forClass(DeleteEntityRequestV1.class);
-        verify(saasDaoMock).createRequest(argument.capture());
-        assertTrue("proper uuid should be generated", UUID.fromString(argument.getValue().getUuid().toString()).version() > 0);
-        assertThat(Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE,
-                argument.getValue().getEntryDate(), lessThanOrEqualTo(System.currentTimeMillis()));
+        postAndVerifyRequest(testRequest);
     }
 
     @Test
@@ -101,7 +74,49 @@ public class SaasV1ControllerTest {
     @Test
     public void t4_whenPostedResyncRequests_theyAreSavedToDao() {
 
-        fail("TODO");
+        TestResyncAllStartSubdomainRequest testStartRequest = new TestResyncAllStartSubdomainRequest().build();
+        TestResyncAllEndSubdomainRequest testEndRequest = new TestResyncAllEndSubdomainRequest().build();
+
+        // Let's POST list with both requests.
+        saas.createRequestsWithList(testStartRequest.getDomain(), testStartRequest.getAdapterName(),
+                "[" + testStartRequest.getRequestJson() +
+                "," + testEndRequest.getRequestJson() + "]"
+                );
+
+        // Let's verify that both requests were saved in Dao:
+        //
+        // - some fields should be equal:
+        // - other fields should be auto-generated
+
+        ArgumentCaptor<SaasPublisher.Request[]> argument = ArgumentCaptor.forClass(SaasPublisher.Request[].class);
+        verify(saasPublisherMock).createRequestsWithList(argument.capture());
+        assertEquals("number of captured requests", argument.getValue().length, 2);
+
+        checker.addResyncAllStartSubdomainRequest( testStartRequest.getRequestObject() );
+        checker.addResyncAllEndSubdomainRequest( testEndRequest.getRequestObject() );
+
+        // Let's verify that expected data were published:
+        argument.getValue()[0].accept(checker);
+        argument.getValue()[1].accept(checker);
+    }
+
+    private void postAndVerifyRequest(TestRequestData testRequestData) {
+
+        // Let's POST a create entity request.
+        saas.createRequest(testRequestData.getDomain(), testRequestData.getAdapterName(), testRequestData.getRequestJson());
+
+        // Let's verify that it was published:
+        //
+        ArgumentCaptor<SaasPublisher.Request> argument = ArgumentCaptor.forClass(SaasPublisher.Request.class);
+        verify(saasPublisherMock).createRequest(argument.capture());
+        //
+        // Let's verify that expected data were published:
+        argument.getValue().accept(checker);
+    }
+
+    private void verifyUuidAndEntryDate(CharSequence uuid, Long entryDateAsMillis) {
+        assertTrue("proper uuid should be generated", UUID.fromString(uuid.toString()).version() > 0);
+        assertThat(Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE, entryDateAsMillis, lessThanOrEqualTo(System.currentTimeMillis()));
     }
 
 }

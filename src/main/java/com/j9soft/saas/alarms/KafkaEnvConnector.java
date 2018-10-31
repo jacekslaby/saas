@@ -55,7 +55,8 @@ public class KafkaEnvConnector extends KafkaConnector {
         producerProps.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
         producerProps.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
         // We want to have schemas under the fully-qualified record name. Across all topics.
-        // (see also  https://docs.confluent.io/current/schema-registry/docs/serializer-formatter.html )
+        // (see also  https://docs.confluent.io/current/schema-registry/docs/serializer-formatter.html
+        //   http://martin.kleppmann.com/2018/01/18/event-types-in-kafka-topic.html)
         producerProps.setProperty(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, "io.confluent.kafka.serializers.subject.RecordNameStrategy");
         producerProps.setProperty(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
         producerProps.setProperty(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false"); // TODO auto.register.schemas to true on Production ?? Check kafka recommendations.

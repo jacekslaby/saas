@@ -10,7 +10,7 @@ public class SaasDaoKafkaTestConfiguration {
         client.connect("127.0.0.1", 9092);
     }
 
-    public SaasDao getDao() {
+    public SaasDaoKafka getDao() {
         return new SaasDaoKafka(client);
     }
 

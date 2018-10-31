@@ -8,6 +8,7 @@ public class Definitions {
 
     public static final String DAO_SCHEMA_REQUEST__UUID = "uuid";
     public static final String DAO_SCHEMA_REQUEST__ENTRY_DATE = "entry_date";
+    public static final String DAO_SCHEMA_REQUEST__EVENT_DATE = "event_date";
 
     public static final String API_SCHEMA_ALARM__ALARM_DTO = "alarm_dto";
     public static final String API_SCHEMA_ALARM__ADDITIONAL_PROPERTIES = "additional_properties";

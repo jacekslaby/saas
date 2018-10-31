@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.Definitions;
+import com.j9soft.saas.alarms.testdata.TestRequestData;
 import org.openapitools.client.model.AlarmDTO;
 import org.openapitools.client.model.AlarmDTOAdditionalProperties;
 import org.openapitools.client.model.CreateAlarm;
@@ -12,15 +13,14 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-class TestCreateEntityRequest {
-    public static final String DOMAIN = "controllerTest";
-    public static final String ADAPTER_NAME = "controllerTestAdapter";
+class TestCreateEntityRequest extends TestRequestData {
 
     private static final String ALARM_NOID = "eric2g:341";
 
     private String requestJson;
     private CreateEntityRequestV1 request;
 
+    @Override
     public String getRequestJson() {
         return requestJson;
     }
@@ -28,10 +28,6 @@ class TestCreateEntityRequest {
     public CreateEntityRequestV1 getRequestObject() {
         return request;
     }
-
-    public String getDomain() { return DOMAIN; }
-
-    public String getAdapterName() { return ADAPTER_NAME; }
 
     public TestCreateEntityRequest build() {
         // Let's prepare our test input request in JSON.

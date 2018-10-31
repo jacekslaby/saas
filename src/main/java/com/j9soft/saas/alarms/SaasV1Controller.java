@@ -55,9 +55,10 @@ public class SaasV1Controller implements SaasV1 {
                                        @PathVariable("adapterName") String adapterName,
                                        @RequestBody String requestDTOArrayAsJson) {
 
-        logger.info("createRequestsWithList(domainName='{}', adapterName='{}')", domainName, adapterName);
+        logger.info("createRequestsWithList(domainName='{}', adapterName='{}') - requestDTOAsJson:'{}'",
+                domainName, adapterName, requestDTOArrayAsJson);
 
-        // @TODO implement multi request method.
+        saasService.createRequestsWithList(domainName, adapterName, requestDTOArrayAsJson);
     }
 
 }

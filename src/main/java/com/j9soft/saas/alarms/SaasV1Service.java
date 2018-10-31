@@ -2,9 +2,11 @@ package com.j9soft.saas.alarms;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.Definitions;
+import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
+import com.j9soft.saas.alarms.model.ResyncAllEndSubdomainRequestV1;
+import com.j9soft.saas.alarms.model.ResyncAllStartSubdomainRequestV1;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,50 +25,67 @@ public class SaasV1Service {
     // https://spring.io/blog/2016/04/15/testing-improvements-in-spring-boot-1-4
     // "Don’t use field injection as it just makes your tests harder to write."
     //
-    private final SaasDao saasDao;
+    private final SaasPublisher saasPublisher;
+
+    private ObjectMapper mapper;
 
     @Autowired
-    SaasV1Service(SaasDao saasDao) {
+    SaasV1Service(SaasPublisher saasPublisher) {
 
-        this.saasDao = saasDao;
+        this.saasPublisher = saasPublisher;
+
+        // For performance reasons we should share ObjectMapper instance.
+        // ( https://stackoverflow.com/questions/3907929/should-i-declare-jacksons-objectmapper-as-a-static-field )
+        mapper = new ObjectMapper();
     }
 
     void createRequest(String domainName, String adapterName, String requestDTOAsJson) {
         // @TODO validate requestDTOAsJson  (using OpenAPI specification)
         //
-        ObjectMapper mapper = new ObjectMapper();  // @TODO for performance reasons we should share ObjectMapper instance
         JsonNode rootNode;
         try {
             rootNode = mapper.readTree(requestDTOAsJson);
         } catch (IOException e) {
             throw new RuntimeException("@TODO better exception handling and returning results", e);
         }
+
+        SaasPublisher.Request request = createRequestFromJsonNode(domainName, adapterName, rootNode);
+
+        // Forward to Dao.
+        saasPublisher.createRequest(request);
+    }
+
+    private SaasPublisher.Request createRequestFromJsonNode(String domainName, String adapterName, JsonNode rootNode) {
         JsonNode requestTypeNode = rootNode.path("request_type");
         if (requestTypeNode.isMissingNode()) {
             throw new RuntimeException("@TODO: better exception handling: rootNode JSON: " + rootNode.asText());
         }
         String requestType = requestTypeNode.asText();
 
+        return createRequestFromJsonNode(domainName, adapterName, requestType, rootNode);
+    }
+
+    private SaasPublisher.Request createRequestFromJsonNode(String domainName, String adapterName, String requestType, JsonNode rootNode) {
 
         // Translate to schemas used in Saas (i.e. to schemas used in Kafka topic)
         //  and forward the result request object to Dao.
         //
         switch (requestType) {  // i.e. based on string enum value defined in OpenAPI yaml specification.
             case "CreateAlarm":
-                createEntityRequest(this.saasDao, domainName, adapterName,
-                        Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
-                break;
+                return createEntityRequest(domainName, adapterName, Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
             case "DeleteAlarm":
-                deleteEntityRequest(this.saasDao, domainName, adapterName,
-                        Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
-                break;
+                return deleteEntityRequest(domainName, adapterName, Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
+            case "ResyncAllEnd":
+                return resyncAllEndRequest(domainName, adapterName, Definitions.ALARM_ENTITY_TYPE_NAME);
+            case "ResyncAllStart":
+                return resyncAllStartRequest(domainName, adapterName, Definitions.ALARM_ENTITY_TYPE_NAME);
             default:
                 throw new RuntimeException("@TODO better exception handling and returning results: " + requestType);
         }
     }
 
-    private void createEntityRequest(SaasDao saasDao, String domainName, String adapterName,
-                                    String entityTypeName, JsonNode requestDTORootNode) {
+    private SaasPublisher.Request createEntityRequest(String domainName, String adapterName,
+                                                      String entityTypeName, JsonNode requestDTORootNode) {
 
         JsonNode alarmDtoNode = requestDTORootNode.path(API_SCHEMA_ALARM__ALARM_DTO);
         if (alarmDtoNode.isMissingNode()) {
@@ -97,7 +116,6 @@ public class SaasV1Service {
         if (alarmDtoAdditionalPropertiesNode.isMissingNode()) {
             throw new RuntimeException("@TODO: better exception handling");
         }
-        ObjectMapper mapper = new ObjectMapper();  // @TODO for performance reasons we should share ObjectMapper instance
         Map<CharSequence, CharSequence> alarmAttributes;
         alarmAttributes = mapper.convertValue(alarmDtoAdditionalPropertiesNode, HashMap.class);  // https://stackoverflow.com/questions/39237835/jackson-jsonnode-to-typed-collection
         //
@@ -138,12 +156,13 @@ public class SaasV1Service {
                 .setEntityAttributes(alarmAttributes)
                 .build();
 
-        // Forward to Dao.
-        saasDao.createRequest(request);
+        // Return an object ready for a SaasPublisher visit.
+        return SaasPublisher.CreateEntityRequest.newBuilder()
+                .setWrappedRequest(request);
     }
 
-    private void deleteEntityRequest(SaasDao saasDao, String domainName, String adapterName,
-                                     String entityTypeName, JsonNode requestDTORootNode) {
+    private SaasPublisher.Request deleteEntityRequest(String domainName, String adapterName,
+                                                      String entityTypeName, JsonNode requestDTORootNode) {
 
         JsonNode alarmDtoNode = requestDTORootNode.path(API_SCHEMA_ALARM__ALARM_DTO);
         if (alarmDtoNode.isMissingNode()) {
@@ -171,7 +190,70 @@ public class SaasV1Service {
                 .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
 
+        // Return an object ready for a SaasPublisher visit.
+        return SaasPublisher.DeleteEntityRequest.newBuilder()
+                .setWrappedRequest(request);
+    }
+
+    private SaasPublisher.Request resyncAllEndRequest(String domainName, String adapterName,
+                                                      String entityTypeName) {
+
+        long entryDate = System.currentTimeMillis();
+
+        ResyncAllEndSubdomainRequestV1 request = ResyncAllEndSubdomainRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(entryDate)
+                .setEntityTypeName(entityTypeName)
+                .setEntityDomainName(domainName)
+                .setEntitySubdomainName(adapterName)
+                .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
+                .build();
+
+        // Return an object ready for a SaasPublisher visit.
+        return SaasPublisher.ResyncAllEndSubdomainRequest.newBuilder()
+                .setWrappedRequest(request);
+    }
+
+    private SaasPublisher.Request resyncAllStartRequest(String domainName, String adapterName,
+                                                        String entityTypeName) {
+
+        long entryDate = System.currentTimeMillis();
+
+        ResyncAllStartSubdomainRequestV1 request = ResyncAllStartSubdomainRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(entryDate)
+                .setEntityTypeName(entityTypeName)
+                .setEntityDomainName(domainName)
+                .setEntitySubdomainName(adapterName)
+                .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
+                .build();
+
+        // Return an object ready for a SaasPublisher visit.
+        return SaasPublisher.ResyncAllStartSubdomainRequest.newBuilder()
+                .setWrappedRequest(request);
+    }
+
+    void createRequestsWithList(String domainName, String adapterName, String requestDTOArrayAsJson) {
+
+        // @TODO validate requestDTOAsJson  (using OpenAPI specification)
+        //
+        JsonNode rootNode;
+        try {
+            rootNode = mapper.readTree(requestDTOArrayAsJson);
+        } catch (IOException e) {
+            throw new RuntimeException("@TODO better exception handling and returning results", e);
+        }
+        if (!rootNode.isArray()) {
+            throw new RuntimeException("@TODO: better exception handling: rootNode JSON: " + rootNode.asText());
+        }
+
+        SaasPublisher.Request[] requests = new SaasPublisher.Request[rootNode.size()];
+        int i = 0;
+        for (final JsonNode requestNode : rootNode) {
+            requests[i++] = createRequestFromJsonNode(domainName, adapterName, requestNode);
+        }
+
         // Forward to Dao.
-        saasDao.createRequest(request);
+        saasPublisher.createRequestsWithList(requests);
     }
 }
