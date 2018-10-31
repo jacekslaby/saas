@@ -1,7 +1,7 @@
 package com.j9soft.saas.alarms;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.j9soft.saas.alarms.testdata.TestCreateEntityRequest;
+import com.j9soft.saas.alarms.testdata.TestDeleteEntityRequest;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -34,27 +34,40 @@ public class SaasPublisherKafkaTest {
     }
 
     @Test
-    public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() throws JsonProcessingException {
+    public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() {
 
-        TestCreateEntityRequest testCreateEntityRequest = TestCreateEntityRequest.build();
+        TestCreateEntityRequest testRequest = TestCreateEntityRequest.build();
         SaasPublisher.Request request = SaasPublisher.CreateEntityRequest.newBuilder()
-                .setWrappedRequest(testCreateEntityRequest.getRequestObject());
+                .setWrappedRequest(testRequest.getRequestObject());
 
         // Let's publish a create entity request.
         saasPublisher.createRequest(request);
 
         // Let's verify that it was saved in Dao:
         //
-        verify(saasDaoMock).createRequest(same( testCreateEntityRequest.getRequestObject() ));
+        verify(saasDaoMock).createRequest(same( testRequest.getRequestObject() ));
     }
-/*
+
     @Test
     public void t2_whenPostedDeleteAlarmRequest_itIsSavedToDao() {
 
+        TestDeleteEntityRequest testRequest = TestDeleteEntityRequest.build();
+        SaasPublisher.Request request = SaasPublisher.DeleteEntityRequest.newBuilder()
+                .setWrappedRequest(testRequest.getRequestObject());
+
+        // Let's publish a create entity request.
+        saasPublisher.createRequest(request);
+
+        // Let's verify that it was saved in Dao:
+        //
+        verify(saasDaoMock).createRequest(same( testRequest.getRequestObject() ));
+    }
+
+/*
     @Test
     public void t3_whenPostedBunchOfRequests_theyAreSavedToDao() {
 
-        fail("TODO");
+        @TODO any ideas to avoid copy&paste&replace ?  Generics ?
     }
 
     @Test

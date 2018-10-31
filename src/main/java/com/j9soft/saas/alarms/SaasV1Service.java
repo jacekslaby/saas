@@ -72,20 +72,20 @@ public class SaasV1Service {
         //
         switch (requestType) {  // i.e. based on string enum value defined in OpenAPI yaml specification.
             case "CreateAlarm":
-                return createEntityRequest(domainName, adapterName, Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
+                return createEntityRequest(domainName, adapterName, rootNode);
             case "DeleteAlarm":
-                return deleteEntityRequest(domainName, adapterName, Definitions.ALARM_ENTITY_TYPE_NAME, rootNode);
+                return deleteEntityRequest(domainName, adapterName, rootNode);
             case "ResyncAllEnd":
-                return resyncAllEndRequest(domainName, adapterName, Definitions.ALARM_ENTITY_TYPE_NAME);
+                return resyncAllEndRequest(domainName, adapterName);
             case "ResyncAllStart":
-                return resyncAllStartRequest(domainName, adapterName, Definitions.ALARM_ENTITY_TYPE_NAME);
+                return resyncAllStartRequest(domainName, adapterName);
             default:
                 throw new RuntimeException("@TODO better exception handling and returning results: " + requestType);
         }
     }
 
     private SaasPublisher.Request createEntityRequest(String domainName, String adapterName,
-                                                      String entityTypeName, JsonNode requestDTORootNode) {
+                                                      JsonNode requestDTORootNode) {
 
         JsonNode alarmDtoNode = requestDTORootNode.path(API_SCHEMA_ALARM__ALARM_DTO);
         if (alarmDtoNode.isMissingNode()) {
@@ -148,7 +148,7 @@ public class SaasV1Service {
         CreateEntityRequestV1 request = CreateEntityRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
-                .setEntityTypeName(entityTypeName)
+                .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
                 .setEntityDomainName(domainName)
                 .setEntitySubdomainName(adapterName)
                 .setEntityIdInSubdomain(notificationIdentifierNode.textValue())
@@ -162,7 +162,7 @@ public class SaasV1Service {
     }
 
     private SaasPublisher.Request deleteEntityRequest(String domainName, String adapterName,
-                                                      String entityTypeName, JsonNode requestDTORootNode) {
+                                                      JsonNode requestDTORootNode) {
 
         JsonNode alarmDtoNode = requestDTORootNode.path(API_SCHEMA_ALARM__ALARM_DTO);
         if (alarmDtoNode.isMissingNode()) {
@@ -183,7 +183,7 @@ public class SaasV1Service {
         DeleteEntityRequestV1 request = DeleteEntityRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
-                .setEntityTypeName(entityTypeName)
+                .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
                 .setEntityDomainName(domainName)
                 .setEntitySubdomainName(adapterName)
                 .setEntityIdInSubdomain(notificationIdentifierNode.textValue())
@@ -195,15 +195,14 @@ public class SaasV1Service {
                 .setWrappedRequest(request);
     }
 
-    private SaasPublisher.Request resyncAllEndRequest(String domainName, String adapterName,
-                                                      String entityTypeName) {
+    private SaasPublisher.Request resyncAllEndRequest(String domainName, String adapterName) {
 
         long entryDate = System.currentTimeMillis();
 
         ResyncAllEndSubdomainRequestV1 request = ResyncAllEndSubdomainRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(entryDate)
-                .setEntityTypeName(entityTypeName)
+                .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
                 .setEntityDomainName(domainName)
                 .setEntitySubdomainName(adapterName)
                 .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
@@ -214,15 +213,14 @@ public class SaasV1Service {
                 .setWrappedRequest(request);
     }
 
-    private SaasPublisher.Request resyncAllStartRequest(String domainName, String adapterName,
-                                                        String entityTypeName) {
+    private SaasPublisher.Request resyncAllStartRequest(String domainName, String adapterName) {
 
         long entryDate = System.currentTimeMillis();
 
         ResyncAllStartSubdomainRequestV1 request = ResyncAllStartSubdomainRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(entryDate)
-                .setEntityTypeName(entityTypeName)
+                .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
                 .setEntityDomainName(domainName)
                 .setEntitySubdomainName(adapterName)
                 .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
