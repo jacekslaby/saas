@@ -1,4 +1,4 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.dao;
 
 import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;

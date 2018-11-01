@@ -1,6 +1,6 @@
 package com.j9soft.saas.alarms.testdata;
 
-import com.j9soft.saas.alarms.SaasDao;
+import com.j9soft.saas.alarms.dao.SaasDao;
 import com.j9soft.saas.alarms.model.*;
 import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;

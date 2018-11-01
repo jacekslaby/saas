@@ -1,5 +1,7 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.controller;
 
+import com.j9soft.saas.alarms.SaasV1;
+import com.j9soft.saas.alarms.service.SaasV1Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +27,7 @@ public class SaasV1Controller implements SaasV1 {
     private SaasV1Service saasService;
 
     @Autowired
-    SaasV1Controller(SaasV1Service saasService) {
+    public SaasV1Controller(SaasV1Service saasService) {
 
         this.saasService = saasService;
     }

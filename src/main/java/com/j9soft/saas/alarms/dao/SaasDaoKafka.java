@@ -1,5 +1,6 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.dao;
 
+import com.j9soft.saas.alarms.config.KafkaConnector;
 import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
 import com.j9soft.saas.alarms.model.ResyncAllEndSubdomainRequestV1;
@@ -27,7 +28,7 @@ public class SaasDaoKafka implements SaasDao {
      *  and this class will get autowired here. (btw: In this class it is important to remember about a destroy method to close a producer.)
      */
     @Autowired
-    SaasDaoKafka(KafkaConnector connector) {
+    public SaasDaoKafka(KafkaConnector connector) {
         this.topicName = connector.getTopicName();
         this.producer = connector.getProducer();
     }
