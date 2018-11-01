@@ -2,6 +2,8 @@ package com.j9soft.saas.alarms;
 
 /**
  * Interface defining functionality provided by API (version 1) of Source Active Alarms Store.
+ *
+ * More details about API can be found in file src/doc/openapi.yaml.
  */
 public interface SaasV1 {
 

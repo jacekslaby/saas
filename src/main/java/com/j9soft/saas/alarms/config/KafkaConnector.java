@@ -1,4 +1,4 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.config;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 

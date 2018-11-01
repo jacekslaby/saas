@@ -1,4 +1,4 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 @Profile({"default","kafka-dev"})
 @Component
-class AuthorizationHeaderJwtFilter extends GenericFilterBean {
+public class AuthorizationHeaderJwtFilter extends GenericFilterBean {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)

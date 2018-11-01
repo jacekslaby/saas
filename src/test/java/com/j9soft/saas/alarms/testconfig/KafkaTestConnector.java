@@ -1,6 +1,7 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.testconfig;
 
 
+import com.j9soft.saas.alarms.config.KafkaConnector;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;

@@ -1,4 +1,4 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.testconfig;
 
 import kafka.admin.RackAwareMode;
 import kafka.server.KafkaConfig;

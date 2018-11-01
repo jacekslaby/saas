@@ -1,4 +1,4 @@
-package com.j9soft.saas.alarms;
+package com.j9soft.saas.alarms.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +30,7 @@ public class SaasV1Service {
     private ObjectMapper mapper;
 
     @Autowired
-    SaasV1Service(SaasPublisher saasPublisher) {
+    public SaasV1Service(SaasPublisher saasPublisher) {
 
         this.saasPublisher = saasPublisher;
 
@@ -39,7 +39,7 @@ public class SaasV1Service {
         mapper = new ObjectMapper();
     }
 
-    void createRequest(String domainName, String adapterName, String requestDTOAsJson) {
+    public void createRequest(String domainName, String adapterName, String requestDTOAsJson) {
         // @TODO validate requestDTOAsJson  (using OpenAPI specification)
         //
         JsonNode rootNode;
@@ -231,7 +231,7 @@ public class SaasV1Service {
                 .setWrappedRequest(request);
     }
 
-    void createRequestsWithList(String domainName, String adapterName, String requestDTOArrayAsJson) {
+    public void createRequestsWithList(String domainName, String adapterName, String requestDTOArrayAsJson) {
 
         // @TODO validate requestDTOAsJson  (using OpenAPI specification)
         //
