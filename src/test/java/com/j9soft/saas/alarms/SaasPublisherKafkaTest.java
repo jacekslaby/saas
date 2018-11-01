@@ -2,6 +2,8 @@ package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.testdata.TestCreateEntityRequest;
 import com.j9soft.saas.alarms.testdata.TestDeleteEntityRequest;
+import com.j9soft.saas.alarms.testdata.TestResyncAllEndSubdomainRequest;
+import com.j9soft.saas.alarms.testdata.TestResyncAllStartSubdomainRequest;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -45,7 +47,7 @@ public class SaasPublisherKafkaTest {
 
         // Let's verify that it was saved in Dao:
         //
-        verify(saasDaoMock).createRequest(same( testRequest.getRequestObject() ));
+        verify(saasDaoMock).createRequest(same(testRequest.getRequestObject()));
     }
 
     @Test
@@ -60,20 +62,37 @@ public class SaasPublisherKafkaTest {
 
         // Let's verify that it was saved in Dao:
         //
-        verify(saasDaoMock).createRequest(same( testRequest.getRequestObject() ));
-    }
-
-/*
-    @Test
-    public void t3_whenPostedBunchOfRequests_theyAreSavedToDao() {
-
-        @TODO any ideas to avoid copy&paste&replace ?  Generics ?
+        verify(saasDaoMock).createRequest(same(testRequest.getRequestObject()));
     }
 
     @Test
-    public void t4_whenPostedResyncRequests_theyAreSavedToDao() {
+    public void t3_whenPostedResyncAllStartSubdomainRequest_itIsSavedToDao() {
 
+        TestResyncAllStartSubdomainRequest testRequest = TestResyncAllStartSubdomainRequest.build();
+        SaasPublisher.Request request = SaasPublisher.ResyncAllStartSubdomainRequest.newBuilder()
+                .setWrappedRequest(testRequest.getRequestObject());
+
+        // Let's publish a delete entity request.
+        saasPublisher.publishRequest(request);
+
+        // Let's verify that it was saved in Dao:
+        //
+        verify(saasDaoMock).createRequest(same(testRequest.getRequestObject()));
     }
 
-*/
+    @Test
+    public void t4_whenPostedResyncAllEndSubdomainRequest_itIsSavedToDao() {
+
+        TestResyncAllEndSubdomainRequest testRequest = TestResyncAllEndSubdomainRequest.build();
+        SaasPublisher.Request request = SaasPublisher.ResyncAllEndSubdomainRequest.newBuilder()
+                .setWrappedRequest(testRequest.getRequestObject());
+
+        // Let's publish a delete entity request.
+        saasPublisher.publishRequest(request);
+
+        // Let's verify that it was saved in Dao:
+        //
+        verify(saasDaoMock).createRequest(same(testRequest.getRequestObject()));
+    }
+
 }

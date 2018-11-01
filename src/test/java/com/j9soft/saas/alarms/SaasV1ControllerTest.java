@@ -1,6 +1,5 @@
 package com.j9soft.saas.alarms;
 
-import com.j9soft.saas.alarms.model.Definitions;
 import com.j9soft.saas.alarms.testdata.*;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -9,19 +8,15 @@ import org.junit.runners.MethodSorters;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.util.UUID;
-
-import static junit.framework.TestCase.*;
-import static org.hamcrest.number.OrderingComparison.lessThanOrEqualTo;
-import static org.junit.Assert.assertThat;
+import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.verify;
 
 /*
  * I assume it is enough to test controller methods without testing HTTP wiring. (i.e. without TestRestTemplate, etc.)
  * (See also: https://spring.io/guides/gs/spring-boot/  @Autowired private TestRestTemplate template;  )
  *
- * The tests from this class verify whether expected operations are executed on SassDao instance
- * as a result of a HTTP request.
+ * The tests from this class verify whether as a result of a HTTP request
+ * the expected input parameters are delivered to a SassDao instance.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SaasV1ControllerTest {
@@ -65,36 +60,68 @@ public class SaasV1ControllerTest {
     @Test
     public void t3_whenPostedBunchOfRequests_theyAreSavedToDao() {
 
-        fail("TODO");
+        // Our test bunch of requests is as follows:
+        //   DeleteAlarmRequest, ResyncAllStartSubdomainRequest, CreateAlarmRequest and finally ResyncAllEndSubdomainRequest.
+        //
+        TestDeleteEntityRequest testDeleteRequest = TestDeleteEntityRequest.build();
+        checker.addDeleteEntityRequest( testDeleteRequest.getRequestObject() );
+        TestResyncAllStartSubdomainRequest testStartRequest = TestResyncAllStartSubdomainRequest.build();
+        checker.addResyncAllStartSubdomainRequest( testStartRequest.getRequestObject() );
+        TestCreateEntityRequest testCreateRequest = TestCreateEntityRequest.build();
+        checker.addCreateEntityRequest( testCreateRequest.getRequestObject() );
+        TestResyncAllEndSubdomainRequest testEndRequest = TestResyncAllEndSubdomainRequest.build();
+        checker.addResyncAllEndSubdomainRequest( testEndRequest.getRequestObject() );
+
+        postAndVerifyRequestsWithArray(new TestRequestData[] {
+                testDeleteRequest,
+                testStartRequest,
+                testCreateRequest,
+                testEndRequest} );
     }
 
     @Test
     public void t4_whenPostedResyncRequests_theyAreSavedToDao() {
 
-        TestResyncAllStartSubdomainRequest testStartRequest = TestResyncAllStartSubdomainRequest.build();
-        TestResyncAllEndSubdomainRequest testEndRequest = TestResyncAllEndSubdomainRequest.build();
-
-        // Let's POST list with both requests.
-        saas.createRequestsWithList(testStartRequest.getDomain(), testStartRequest.getAdapterName(),
-                "[" + testStartRequest.getRequestJson() +
-                "," + testEndRequest.getRequestJson() + "]"
-                );
-
-        // Let's verify that both requests were saved in Dao:
+        // Resync is when two requests come: ResyncAllStartSubdomainRequest followed by ResyncAllEndSubdomainRequest.
         //
-        // - some fields should be equal:
-        // - other fields should be auto-generated
-
-        ArgumentCaptor<SaasPublisher.Request[]> argument = ArgumentCaptor.forClass(SaasPublisher.Request[].class);
-        verify(saasPublisherMock).publishRequestsWithArray(argument.capture());
-        assertEquals("number of captured requests", argument.getValue().length, 2);
-
+        TestResyncAllStartSubdomainRequest testStartRequest = TestResyncAllStartSubdomainRequest.build();
         checker.addResyncAllStartSubdomainRequest( testStartRequest.getRequestObject() );
+        TestResyncAllEndSubdomainRequest testEndRequest = TestResyncAllEndSubdomainRequest.build();
         checker.addResyncAllEndSubdomainRequest( testEndRequest.getRequestObject() );
 
-        // Let's verify that expected data were published:
-        argument.getValue()[0].accept(checker);
-        argument.getValue()[1].accept(checker);
+        postAndVerifyRequestsWithArray(new TestRequestData[] {
+                testStartRequest,
+                testEndRequest} );
+    }
+
+    private void postAndVerifyRequestsWithArray(TestRequestData[] testRequestDataArray) {
+
+        TestRequestData firstTestRequest = testRequestDataArray[0];
+
+        // Let's concatenate JSON from all requests.
+        StringBuilder requestJson = new StringBuilder();
+        requestJson.append('[');
+        requestJson.append(firstTestRequest.getRequestJson());
+        for (int i = 1; i < testRequestDataArray.length; i++) {
+            requestJson.append(',');
+            requestJson.append(testRequestDataArray[i].getRequestJson());
+        }
+        requestJson.append(']');
+
+        // Let's POST list with all requests.
+        saas.createRequestsWithList(firstTestRequest.getDomain(), firstTestRequest.getAdapterName(),
+                requestJson.toString() );
+
+        // Let's verify that requests were saved in Dao:
+        ArgumentCaptor<SaasPublisher.Request[]> argument = ArgumentCaptor.forClass(SaasPublisher.Request[].class);
+        verify(saasPublisherMock).publishRequestsWithArray(argument.capture());
+        SaasPublisher.Request[] capturedRequests = argument.getValue();
+        assertEquals("number of captured requests", capturedRequests.length, testRequestDataArray.length);
+
+        // Let's verify that expected data were delivered to SaasDao:
+        for (int i = 0; i < testRequestDataArray.length; i++) {
+            capturedRequests[i].accept(checker);
+        }
     }
 
     private void postAndVerifyRequest(TestRequestData testRequestData) {
@@ -107,13 +134,8 @@ public class SaasV1ControllerTest {
         ArgumentCaptor<SaasPublisher.Request> argument = ArgumentCaptor.forClass(SaasPublisher.Request.class);
         verify(saasPublisherMock).publishRequest(argument.capture());
         //
-        // Let's verify that expected data were published:
+        // Let's verify that expected data were delivered to SaasDao:
         argument.getValue().accept(checker);
-    }
-
-    private void verifyUuidAndEntryDate(CharSequence uuid, Long entryDateAsMillis) {
-        assertTrue("proper uuid should be generated", UUID.fromString(uuid.toString()).version() > 0);
-        assertThat(Definitions.DAO_SCHEMA_REQUEST__ENTRY_DATE, entryDateAsMillis, lessThanOrEqualTo(System.currentTimeMillis()));
     }
 
 }

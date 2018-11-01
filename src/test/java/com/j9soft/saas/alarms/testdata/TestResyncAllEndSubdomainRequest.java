@@ -8,11 +8,14 @@ import org.openapitools.client.model.ResyncAllEnd;
 import static com.j9soft.saas.alarms.testdata.TestConstants.ADAPTER_NAME;
 import static com.j9soft.saas.alarms.testdata.TestConstants.DOMAIN;
 
-public class TestResyncAllEndSubdomainRequest {
+public class TestResyncAllEndSubdomainRequest extends TestRequestData {
 
     private String requestJson;
     private ResyncAllEndSubdomainRequestV1 request;
 
+    private TestResyncAllEndSubdomainRequest() {}
+
+    @Override
     public String getRequestJson() {
         return requestJson;
     }
@@ -20,12 +23,6 @@ public class TestResyncAllEndSubdomainRequest {
     public ResyncAllEndSubdomainRequestV1 getRequestObject() {
         return request;
     }
-
-    private TestResyncAllEndSubdomainRequest() {}
-
-    public String getDomain() { return DOMAIN; }
-
-    public String getAdapterName() { return ADAPTER_NAME; }
 
     public static TestResyncAllEndSubdomainRequest build() {
         TestResyncAllEndSubdomainRequest result = new TestResyncAllEndSubdomainRequest();

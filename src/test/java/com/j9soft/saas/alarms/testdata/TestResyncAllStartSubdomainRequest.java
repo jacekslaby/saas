@@ -5,16 +5,14 @@ import com.j9soft.saas.alarms.model.Definitions;
 import com.j9soft.saas.alarms.model.ResyncAllStartSubdomainRequestV1;
 import org.openapitools.client.model.ResyncAllStart;
 
-import static com.j9soft.saas.alarms.testdata.TestConstants.ADAPTER_NAME;
-import static com.j9soft.saas.alarms.testdata.TestConstants.DOMAIN;
-
-public class TestResyncAllStartSubdomainRequest {
+public class TestResyncAllStartSubdomainRequest extends TestRequestData {
 
     private String requestJson;
     private ResyncAllStartSubdomainRequestV1 request;
 
     private TestResyncAllStartSubdomainRequest() {}
 
+    @Override
     public String getRequestJson() {
         return requestJson;
     }
@@ -22,10 +20,6 @@ public class TestResyncAllStartSubdomainRequest {
     public ResyncAllStartSubdomainRequestV1 getRequestObject() {
         return request;
     }
-
-    public String getDomain() { return DOMAIN; }
-
-    public String getAdapterName() { return ADAPTER_NAME; }
 
     public static TestResyncAllStartSubdomainRequest build() {
         TestResyncAllStartSubdomainRequest result = new TestResyncAllStartSubdomainRequest();
