@@ -54,12 +54,23 @@ public class KafkaEnvConnector extends KafkaConnector {
         producerProps.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "SaasProducer");  // TODO configuration ?  And maybe share it with tests connector.
         producerProps.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getCanonicalName());
         producerProps.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
+        //
         // We want to have schemas under the fully-qualified record name. Across all topics.
         // (see also  https://docs.confluent.io/current/schema-registry/docs/serializer-formatter.html
         //   http://martin.kleppmann.com/2018/01/18/event-types-in-kafka-topic.html)
         producerProps.setProperty(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, "io.confluent.kafka.serializers.subject.RecordNameStrategy");
         producerProps.setProperty(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
         producerProps.setProperty(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false"); // TODO auto.register.schemas to true on Production ?? Check kafka recommendations.
+        //
+        // We need an idempotent producer because ordering of messages is strictly required.
+        // (e.g. because if a ResyncAllStart is redelivered again after several CreateEntity requests
+        //  then we would have lost all those entities during resynchronization)
+        //
+        // https://www.confluent.io/blog/exactly-once-semantics-are-possible-heres-how-apache-kafka-does-it/
+        // - "to get exactly-once semantics per partition - meaning no duplicates, no data loss, and in-order semantics -
+        //    configure your producer to set “enable.idempotence=true”
+        //
+        producerProps.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
         //
         // Create a new instance.
         producer = new KafkaProducer<>(producerProps);
