@@ -19,21 +19,30 @@ public interface SaasDao {
     /**
      * Create a new request of type CreateEntityRequest(ed).
      */
-    void createRequest(CreateEntityRequestV1 request);
+    void createRequest(CreateEntityRequestV1 request, Callback callback);
 
     /**
      * Create a new request of type DeleteEntityRequest(ed).
      */
-    void createRequest(DeleteEntityRequestV1 request);
+    void createRequest(DeleteEntityRequestV1 request, Callback callback);
 
     /**
      * Create a new request of type ResyncAllStartSubdomainRequest(ed).
      */
-    void createRequest(ResyncAllStartSubdomainRequestV1 request);
+    void createRequest(ResyncAllStartSubdomainRequestV1 request, Callback callback);
 
     /**
      * Create a new request of type ResyncAllEndSubdomainRequest(ed).
      */
-    void createRequest(ResyncAllEndSubdomainRequestV1 request);
+    void createRequest(ResyncAllEndSubdomainRequestV1 request, Callback callback);
 
+    /**
+     * Callback method onCompletion is invoked by SaasDao after request is processed.
+     */
+    interface Callback {
+        /**
+         * @param exception If any exception happened then it is provided. Otherwise null is delivered.
+         */
+        public void onCompletion(Exception exception);
+    }
 }

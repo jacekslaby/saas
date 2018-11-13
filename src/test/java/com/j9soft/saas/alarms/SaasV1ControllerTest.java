@@ -1,6 +1,7 @@
 package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.controller.SaasV1Controller;
+import com.j9soft.saas.alarms.service.PublishTask;
 import com.j9soft.saas.alarms.service.SaasPublisher;
 import com.j9soft.saas.alarms.service.SaasV1Service;
 import com.j9soft.saas.alarms.testdata.*;
@@ -13,6 +14,7 @@ import org.mockito.Mockito;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /*
  * I assume it is enough to test controller methods without testing HTTP wiring. (i.e. without TestRestTemplate, etc.)
@@ -26,14 +28,32 @@ public class SaasV1ControllerTest {
 
     private SaasV1 saas;
     private SaasPublisher saasPublisherMock;
+    private NotWaitingPublishTask publishTask;
     private CapturedRequestChecker checker;
+
+    class NotWaitingPublishTask extends PublishTask {
+        private Exception[] exceptions;
+
+        void setResults(Exception[] exceptions) {
+            this.exceptions = exceptions;
+        }
+
+        public void onCompletion(int messageNum, Exception exception) {
+
+        }
+        public Exception[] getResults() throws InterruptedException {
+            return exceptions;
+        }
+    }
 
     @Before
     public void initRaas() {
 
         // Let's create a mock which will be checked for expected operation calls.
         //
+        publishTask = new NotWaitingPublishTask();
         saasPublisherMock = Mockito.mock(SaasPublisher.class);
+        when(saasPublisherMock.createNewTask()).thenReturn(publishTask);
 
         // Let's create the tested bean.
         saas = new SaasV1Controller(new SaasV1Service(this.saasPublisherMock));
@@ -111,6 +131,9 @@ public class SaasV1ControllerTest {
         }
         requestJson.append(']');
 
+        // Let's stub results to be received by SaasV1Service.
+        publishTask.setResults(new Exception[testRequestDataArray.length]);
+
         // Let's POST list with all requests.
         saas.createRequestsWithList(firstTestRequest.getDomain(), firstTestRequest.getAdapterName(),
                 requestJson.toString() );
@@ -128,6 +151,9 @@ public class SaasV1ControllerTest {
     }
 
     private void postAndVerifyRequest(TestRequestData testRequestData) {
+
+        // Let's stub results to be received by SaasV1Service.
+        publishTask.setResults(new Exception[] {null});
 
         // Let's POST a create entity request.
         saas.createRequest(testRequestData.getDomain(), testRequestData.getAdapterName(), testRequestData.getRequestJson());

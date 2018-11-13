@@ -50,7 +50,7 @@ public class CapturedRequestChecker implements SaasDao {
     }
 
     @Override
-    public void createRequest(CreateEntityRequestV1 capturedRequest) {
+    public void createRequest(CreateEntityRequestV1 capturedRequest, Callback callback) {
         // - some fields should be equal
         // - other fields should be auto-generated
 
@@ -71,7 +71,7 @@ public class CapturedRequestChecker implements SaasDao {
     }
 
     @Override
-    public void createRequest(DeleteEntityRequestV1 capturedRequest) {
+    public void createRequest(DeleteEntityRequestV1 capturedRequest, Callback callback) {
         // - some fields should be equal
         // - other fields should be auto-generated
 
@@ -92,7 +92,7 @@ public class CapturedRequestChecker implements SaasDao {
     }
 
     @Override
-    public void createRequest(ResyncAllStartSubdomainRequestV1 capturedRequest) {
+    public void createRequest(ResyncAllStartSubdomainRequestV1 capturedRequest, Callback callback) {
         // - some fields should be equal
         // - other fields should be auto-generated
 
@@ -109,7 +109,7 @@ public class CapturedRequestChecker implements SaasDao {
     }
 
     @Override
-    public void createRequest(ResyncAllEndSubdomainRequestV1 capturedRequest) {
+    public void createRequest(ResyncAllEndSubdomainRequestV1 capturedRequest, Callback callback) {
         // - some fields should be equal
         // - other fields should be auto-generated
 

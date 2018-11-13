@@ -59,11 +59,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestResponse'
+                $ref: '#/components/schemas/RequestCreatedResponse'
         '403':
           description: |
             Provided access token (in Header 'Authentication: Bearer ...') 
             does not allow to modify Alarms in this Domain and/or Adapter.
+        '500':
+          description: |
+            Unexpected error. The request could not have been created. Please re-try later.
 
   /domains/{domainName}/adapters/{adapterName}/request/createWithList:
     post:
@@ -87,21 +90,26 @@ paths:
               - request_type: ResyncAllEnd
       responses:
         '200':
-          description: "successful operation"
+          description: |
+            Successful operation. Nested array of status codes has 200 (i.e. OK) in every item.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RequestResponse'
-                example: 
-                  - uuid: "123e4567-e89b-12d3-a456-426655440000"
-                  - uuid: "223e4567-e89b-12d3-a456-426655440001"
-                  - uuid: "323e4567-e89b-12d3-a456-426655440002"
+                $ref: '#/components/schemas/MultiStatusResponse'
+        '207':
+          description: |
+            Partially successful operation. Nested array of status codes (200 or 500) indicates which request was created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultiStatusResponse'
         '403':
           description: |
             Provided access token (in Header 'Authentication: Bearer ...') 
             does not allow to modify Alarms in this Domain and/or Adapter.
+        '500':
+          description: |
+            Unexpected error. None of the requests could not have been created. Please re-try later.
 
 components:
   schemas:
@@ -236,13 +244,45 @@ components:
           additional_text: "Detailed information"
           managed_object_instance: "BTS:333"
         
-    RequestResponse:
+    RequestCreatedResponse:
       type: object
       properties:
         uuid:
           type: string
           format: uuid
           example: "123e4567-e89b-12d3-a456-426655440000"
+          description: |
+            It contains UUID of the created request.
+    MultiStatusResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/RequestCreationResult'
+      example: 
+        - status: 200
+          uuid: "123e4567-e89b-12d3-a456-426655440000"
+        - status: 200
+          uuid: "223e4567-e89b-12d3-a456-426655440001"
+        - status: 200
+          uuid: "323e4567-e89b-12d3-a456-426655440002"
+    RequestCreationResult:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+          example: "123e4567-e89b-12d3-a456-426655440000"
+          description: |
+            It contains UUID in case everything went OK, i.e. when the request was created.
+            It is `null` in case when `status` property is '500'.
+        status:
+          type: string
+          enum: [200, 500]
+          example: "500"
+          description: |
+            500 means it was not possible to add this request. Please re-try later.
+            200 means it was OK.
+            
             
   parameters:
     domainName:

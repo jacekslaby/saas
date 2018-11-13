@@ -2,11 +2,10 @@ package com.j9soft.saas.alarms.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.j9soft.saas.alarms.model.Definitions;
-import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
-import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
-import com.j9soft.saas.alarms.model.ResyncAllEndSubdomainRequestV1;
-import com.j9soft.saas.alarms.model.ResyncAllStartSubdomainRequestV1;
+import com.j9soft.saas.alarms.model.*;
+import org.openapitools.client.model.MultiStatusResponse;
+import org.openapitools.client.model.RequestCreatedResponse;
+import org.openapitools.client.model.RequestResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +38,7 @@ public class SaasV1Service {
         mapper = new ObjectMapper();
     }
 
-    public void createRequest(String domainName, String adapterName, String requestDTOAsJson) {
+    public RequestCreatedResponse createRequest(String domainName, String adapterName, String requestDTOAsJson) {
         // @TODO validate requestDTOAsJson  (using OpenAPI specification)
         //
         JsonNode rootNode;
@@ -49,10 +48,32 @@ public class SaasV1Service {
             throw new RuntimeException("@TODO better exception handling and returning results", e);
         }
 
+        PublishTask publishTask = saasPublisher.createNewTask();
         SaasPublisher.Request request = createRequestFromJsonNode(domainName, adapterName, rootNode);
+        request.setPublishTask(publishTask);
 
         // Forward to Dao.
         saasPublisher.publishRequest(request);
+
+        // Blocking wait for results.
+        Exception[] results;
+        try {
+            results = publishTask.getResults();
+        } catch (InterruptedException e) {
+            // Something went wrong. We need to return '500' HTTP status code.
+            throw new RuntimeException("Unexpected error. The request could not have been created. Please re-try later.");
+        }
+
+        // Build response.
+        if (results[0] == null) {
+            // Request was created successfully in Dao.
+            RequestCreatedResponse requestCreatedResponse = new RequestCreatedResponse();
+            // @TODO return UUID requestCreatedResponse.setUuid(request. wrappedRequest.getUUID() );
+            return requestCreatedResponse;
+        } else {
+            // Something went wrong. We need to return '500' HTTP status code.
+            throw new RuntimeException("Unexpected error. The request could not have been created. Please re-try later.");
+        }
     }
 
     private SaasPublisher.Request createRequestFromJsonNode(String domainName, String adapterName, JsonNode rootNode) {
@@ -231,7 +252,7 @@ public class SaasV1Service {
                 .setWrappedRequest(request);
     }
 
-    public void createRequestsWithList(String domainName, String adapterName, String requestDTOArrayAsJson) {
+    public MultiStatusResponse createRequestsWithList(String domainName, String adapterName, String requestDTOArrayAsJson) {
 
         // @TODO validate requestDTOAsJson  (using OpenAPI specification)
         //
@@ -245,13 +266,39 @@ public class SaasV1Service {
             throw new RuntimeException("@TODO: better exception handling: rootNode JSON: " + rootNode.asText());
         }
 
+        PublishTask publishTask = saasPublisher.createNewTask();
         SaasPublisher.Request[] requests = new SaasPublisher.Request[rootNode.size()];
-        int i = 0;
+        int j = 0;
         for (final JsonNode requestNode : rootNode) {
-            requests[i++] = createRequestFromJsonNode(domainName, adapterName, requestNode);
+            requests[j] = createRequestFromJsonNode(domainName, adapterName, requestNode);
+            requests[j].setPublishTask(publishTask);
+            j++;
         }
 
         // Forward to Dao.
         saasPublisher.publishRequestsWithArray(requests);
+
+        // Blocking wait for results.
+        Exception[] results;
+        try {
+            results = publishTask.getResults();
+        } catch (InterruptedException e) {
+            // Something went wrong. We need to return '500' HTTP status code.
+            throw new RuntimeException("Unexpected error. The request could not have been created. Please re-try later.");
+        }
+
+        // Build response.
+        MultiStatusResponse response = new MultiStatusResponse();
+        RequestResult[] requestResults = new RequestResult[results.length];
+        for (int i = 0; i < results.length; i++) {
+            requestResults[i] = new RequestResult();
+            if (results[i] != null) {
+                requestResults[i].setStatus(RequestResult.StatusEnum._500);
+            } else {
+                requestResults[i].setStatus(RequestResult.StatusEnum._200);
+                //@TODO add UUID to returned RequestResult
+            }
+        }
+        return response;
     }
 }

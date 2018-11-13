@@ -34,9 +34,6 @@ public class SaasPublisherKafka implements SaasPublisher {
     public void publishRequest(SaasPublisher.Request request) {
 
         request.accept(saasDaoKafka);
-
-        // TODO How to report exceptions to a client ?  When and how it is possible to discover any problems with send() ?
-        // We need to register a callback. See TODOs described in the method publishRequestsWithArray() below.
     }
 
     @Override
@@ -76,22 +73,15 @@ public class SaasPublisherKafka implements SaasPublisher {
         //  (however - does it make sense ? Kafka will provide own retries (TODO configure it),
         //    so what is the purpose for a client to try again on its own ? Hm... maybe in 1h kafka will be up again ?)
 
-        // TODO How to report exceptions to a client ?  When and how it is possible to discover any problems with send() ?
-        //
-        // Register one callback object which groups these requests together
-        // and returns a response after they are send.
-        // See how it is done at "new ProducerPool.ProduceRequestCallback() " in
-        // https://github.com/confluentinc/kafka-rest/blob/master/kafka-rest/src/main/java/io/confluent/kafkarest/resources/PartitionsResource.java
-        // (but we do not need a pool of producers, because we have only one type,  (in kafka-rest they have several types: avro, no-schema,etc.)
-        //  and it is thread safe)
-        //
-        // "Container for state associated with one REST-ful produce request, i.e. a batched send"
-        // https://github.com/confluentinc/kafka-rest/blob/master/kafka-rest/src/main/java/io/confluent/kafkarest/ProduceTask.java
-
         // TODO AsyncResponse ?  (to improve performance/parallelizm ?)
 
         for (SaasPublisher.Request request: requests) {
             request.accept(saasDaoKafka);
         }
+    }
+
+    @Override
+    public PublishTask createNewTask() {
+        return new PublishTask();
     }
 }

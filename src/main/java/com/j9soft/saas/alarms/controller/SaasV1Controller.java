@@ -2,6 +2,8 @@ package com.j9soft.saas.alarms.controller;
 
 import com.j9soft.saas.alarms.SaasV1;
 import com.j9soft.saas.alarms.service.SaasV1Service;
+import org.openapitools.client.model.MultiStatusResponse;
+import org.openapitools.client.model.RequestCreatedResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,27 +42,36 @@ public class SaasV1Controller implements SaasV1 {
 
     @Override
     @PostMapping("/v1/domains/{domainName}/adapters/{adapterName}/request")
-    public void createRequest(@PathVariable("domainName") String domainName,
-                              @PathVariable("adapterName") String adapterName,
-                              @RequestBody String requestDTOAsJson) {
+    public RequestCreatedResponse createRequest(@PathVariable("domainName") String domainName,
+                                                @PathVariable("adapterName") String adapterName,
+                                                @RequestBody String requestDTOAsJson) {
 
         logger.info("createRequest(domainName='{}', adapterName='{}') - requestDTOAsJson:'{}'",
                 domainName, adapterName, requestDTOAsJson);
 
-        saasService.createRequest(domainName, adapterName, requestDTOAsJson);
+        return saasService.createRequest(domainName, adapterName, requestDTOAsJson);
+
+        // https://www.baeldung.com/spring-request-response-body
+        //  "Remember, we don’t need to annotate the @RestController-annotated controllers with the @ResponseBody annotation
+        //   since it’s done by default here."
     }
 
 
     @Override
     @PostMapping("/v1/domains/{domainName}/adapters/{adapterName}/request")
-    public void createRequestsWithList(@PathVariable("domainName") String domainName,
-                                       @PathVariable("adapterName") String adapterName,
-                                       @RequestBody String requestDTOArrayAsJson) {
+    public MultiStatusResponse createRequestsWithList(@PathVariable("domainName") String domainName,
+                                                      @PathVariable("adapterName") String adapterName,
+                                                      @RequestBody String requestDTOArrayAsJson) {
 
         logger.info("createRequestsWithList(domainName='{}', adapterName='{}') - requestDTOAsJson:'{}'",
                 domainName, adapterName, requestDTOArrayAsJson);
 
-        saasService.createRequestsWithList(domainName, adapterName, requestDTOArrayAsJson);
+        return saasService.createRequestsWithList(domainName, adapterName, requestDTOArrayAsJson);
+
+        // @TODO Add logic to return 207 in case of a partial success.
+        // (see https://stackoverflow.com/questions/16232833/how-to-respond-with-http-400-error-in-a-spring-mvc-responsebody-method-returnin#16250729
+        //   The only way it can be done is by registering custom exception handler.
+        //   (I mean the only way without introducing REST specific objects (ResponseEntity,etc.) into a generic SaasV1 interface.)
     }
 
 }

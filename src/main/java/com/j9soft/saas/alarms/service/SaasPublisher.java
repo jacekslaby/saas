@@ -19,9 +19,15 @@ public interface SaasPublisher {
 
     /**
      * Publish new requests. (e.g. of type DeleteEntityRequestV1(ed), CreateEntityRequestV1(ed)).
-     * It is an atomic change. (i.e. all or nothing)
+     * It is NOT an atomic change. (i.e. some requests may come through and some may fail)
      */
     void publishRequestsWithArray(Request[] requests);
+
+    /**
+     * Creates a new object which gathers all results of a call to publishRequest or publishRequestsWithArray.
+     * @return
+     */
+    PublishTask createNewTask();
 
     /**
      * Wrapper object which contains a request as defined in DAO layer. (e.g. an instance of CreateEntityRequestV1)
@@ -29,11 +35,17 @@ public interface SaasPublisher {
      * Note: The implementing classes are Elements from Visitor pattern. (https://en.wikipedia.org/wiki/Visitor_pattern)
      *  (and Visitor classes implement SaasDao)
      */
-    interface Request {
-        void accept(SaasDao visitor);
+    abstract class Request {
+        PublishTask publishTask;
+
+        public abstract void accept(SaasDao visitor);
+
+        public void setPublishTask(PublishTask publishTask) {
+            this.publishTask = publishTask;
+        }
     }
 
-    class CreateEntityRequest implements Request {
+    class CreateEntityRequest extends Request {
 
         private CreateEntityRequestV1 wrappedDaoRequest;
 
@@ -48,11 +60,11 @@ public interface SaasPublisher {
 
         @Override
         public void accept(SaasDao visitor) {
-            visitor.createRequest(this.wrappedDaoRequest);
+            visitor.createRequest(this.wrappedDaoRequest, publishTask.createCallback());
         }
     }
 
-    class DeleteEntityRequest implements Request {
+    class DeleteEntityRequest extends Request {
 
         private DeleteEntityRequestV1 wrappedDaoRequest;
 
@@ -67,11 +79,11 @@ public interface SaasPublisher {
 
         @Override
         public void accept(SaasDao visitor) {
-            visitor.createRequest(this.wrappedDaoRequest);
+            visitor.createRequest(this.wrappedDaoRequest, publishTask.createCallback());
         }
     }
 
-    class ResyncAllStartSubdomainRequest implements Request {
+    class ResyncAllStartSubdomainRequest extends Request {
 
         private ResyncAllStartSubdomainRequestV1 wrappedDaoRequest;
 
@@ -86,11 +98,11 @@ public interface SaasPublisher {
 
         @Override
         public void accept(SaasDao visitor) {
-            visitor.createRequest(this.wrappedDaoRequest);
+            visitor.createRequest(this.wrappedDaoRequest, publishTask.createCallback());
         }
     }
 
-    class ResyncAllEndSubdomainRequest implements Request {
+    class ResyncAllEndSubdomainRequest extends Request {
 
         private ResyncAllEndSubdomainRequestV1 wrappedDaoRequest;
 
@@ -105,7 +117,7 @@ public interface SaasPublisher {
 
         @Override
         public void accept(SaasDao visitor) {
-            visitor.createRequest(this.wrappedDaoRequest);
+            visitor.createRequest(this.wrappedDaoRequest, publishTask.createCallback());
         }
     }
 }
