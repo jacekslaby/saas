@@ -1,13 +1,11 @@
 package com.j9soft.saas.alarms;
 
-import com.j9soft.saas.alarms.dao.SaasDao;
+import com.j9soft.saas.alarms.dao.RequestDao;
 import com.j9soft.saas.alarms.dao.SaasDaoKafka;
 import com.j9soft.saas.alarms.testconfig.SaasDaoKafkaTestConfiguration;
 import com.j9soft.saas.alarms.testconfig.SaasDaoKafkaTestEmbeddedBroker;
-import com.j9soft.saas.alarms.testdata.TestCreateEntityRequest;
-import com.j9soft.saas.alarms.testdata.TestDeleteEntityRequest;
-import com.j9soft.saas.alarms.testdata.TestResyncAllEndSubdomainRequest;
-import com.j9soft.saas.alarms.testdata.TestResyncAllStartSubdomainRequest;
+import com.j9soft.saas.alarms.testdata.TestDaoRequestsBuilder;
+import com.j9soft.saas.alarms.testdata.TestDtoRequests;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
@@ -29,7 +27,9 @@ public class SaasDaoKafkaTest {
     private static SaasDaoKafkaTestConfiguration testConfig;
 
     protected SaasDaoKafka kafkaDao;
-    private SaasDao.Callback callbackMock;
+    private RequestDao.Callback callbackMock;
+    private TestDaoRequestsBuilder builder;
+    private TestDtoRequests testDtoRequests;
 
     @BeforeClass
     public static void init() throws IOException {
@@ -54,16 +54,18 @@ public class SaasDaoKafkaTest {
     @Before
     public void initDao() {
         // Create bean to be tested.
-        this.kafkaDao = testConfig.getDao();
+        kafkaDao = testConfig.getDao();
 
-        callbackMock = Mockito.mock(SaasDao.Callback.class);
+        callbackMock = Mockito.mock(RequestDao.Callback.class);
+
+        builder = TestDaoRequestsBuilder.newBuilder();
+        testDtoRequests = TestDtoRequests.newBuilder(builder);
     }
 
     @Test
     public void t1_whenReceivedCreateRequest_itIsSavedToKafka() {
 
-        TestCreateEntityRequest testEntityRequest = TestCreateEntityRequest.build();
-        kafkaDao.createRequest(testEntityRequest.getRequestObject(), callbackMock);
+        kafkaDao.saveNewRequest(builder.getCreateEntityRequest(), callbackMock);
 
         // We expect that our callback object receives a null Exception, which means a successful send operation to kafka.
         Mockito.verify(callbackMock, Mockito.timeout(1000)).onCompletion(isNull());
@@ -72,8 +74,7 @@ public class SaasDaoKafkaTest {
     @Test
     public void t2_whenReceivedDeleteRequest_itIsSavedToKafka() {
 
-        TestDeleteEntityRequest testEntityRequest = TestDeleteEntityRequest.build();
-        kafkaDao.createRequest(testEntityRequest.getRequestObject(), callbackMock);
+        kafkaDao.saveNewRequest(builder.getDeleteEntityRequest(), callbackMock);
 
         Mockito.verify(callbackMock, Mockito.timeout(1000)).onCompletion(isNull());
     }
@@ -81,8 +82,7 @@ public class SaasDaoKafkaTest {
     @Test
     public void t3_whenPostedResyncAllStartSubdomainRequest_itIsSavedToDao() {
 
-        TestResyncAllStartSubdomainRequest testRequest = TestResyncAllStartSubdomainRequest.build();
-        kafkaDao.createRequest(testRequest.getRequestObject(), callbackMock);
+        kafkaDao.saveNewRequest(builder.getResyncAllStartSubdomainRequest(), callbackMock);
 
         Mockito.verify(callbackMock, Mockito.timeout(1000)).onCompletion(isNull());
     }
@@ -90,8 +90,7 @@ public class SaasDaoKafkaTest {
     @Test
     public void t4_whenPostedResyncAllEndSubdomainRequest_itIsSavedToDao() {
 
-        TestResyncAllEndSubdomainRequest testRequest = TestResyncAllEndSubdomainRequest.build();
-        kafkaDao.createRequest(testRequest.getRequestObject(), callbackMock);
+        kafkaDao.saveNewRequest(builder.getResyncAllEndSubdomainRequest(), callbackMock);
 
         Mockito.verify(callbackMock, Mockito.timeout(1000)).onCompletion(isNull());
     }

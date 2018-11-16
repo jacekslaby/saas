@@ -1,5 +1,7 @@
 package com.j9soft.saas.alarms;
 
+import com.j9soft.saas.alarms.model.RequestDto;
+import com.j9soft.saas.alarms.model.RequestsListDto;
 import org.openapitools.client.model.MultiStatusResponse;
 import org.openapitools.client.model.RequestCreatedResponse;
 
@@ -11,13 +13,13 @@ import org.openapitools.client.model.RequestCreatedResponse;
 public interface SaasV1 {
 
     /**
-     * Create a new Request.
+     * Create a new RequestDto.
      */
-    RequestCreatedResponse createRequest(String domainName, String adapterName, String requestDTOAsJson);
+    RequestCreatedResponse createRequest(String domainName, String adapterName, RequestDto requestDto);
 
     /**
      * Create several Requests.
      */
-    MultiStatusResponse createRequestsWithList(String domainName, String adapterName, String requestDTOArrayAsJson);
+    MultiStatusResponse createRequestsWithList(String domainName, String adapterName, RequestsListDto requestsListDto);
 
 }

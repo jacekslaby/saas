@@ -43,7 +43,7 @@ public class SaasDaoKafka implements SaasDao {
     }
 
     @Override
-    public void createRequest(CreateEntityRequestV1 request, Callback callback) {
+    public void saveNewRequest(CreateEntityRequestV1 request, RequestDao.Callback callback) {
 
         // @TODO think over the idea of partitioning by uuid    (because most likely all requests from an array are from one subdomain,
         //   so it makes little sense to commit to several partitions which is probably more costly as they may reside on different kafka brokers)
@@ -71,19 +71,19 @@ public class SaasDaoKafka implements SaasDao {
     }
 
     @Override
-    public void createRequest(DeleteEntityRequestV1 request, Callback callback) {
+    public void saveNewRequest(DeleteEntityRequestV1 request, RequestDao.Callback callback) {
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record, (recordMetadata, e) -> callback.onCompletion(e));
     }
 
     @Override
-    public void createRequest(ResyncAllStartSubdomainRequestV1 request, Callback callback) {
+    public void saveNewRequest(ResyncAllStartSubdomainRequestV1 request, RequestDao.Callback callback) {
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record, (recordMetadata, e) -> callback.onCompletion(e));
     }
 
     @Override
-    public void createRequest(ResyncAllEndSubdomainRequestV1 request, Callback callback) {
+    public void saveNewRequest(ResyncAllEndSubdomainRequestV1 request, RequestDao.Callback callback) {
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record, (recordMetadata, e) -> callback.onCompletion(e));
     }

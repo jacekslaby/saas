@@ -1,6 +1,7 @@
 package com.j9soft.saas.alarms.service;
 
 import com.j9soft.saas.alarms.dao.SaasDaoKafka;
+import com.j9soft.saas.alarms.model.RequestDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +32,12 @@ public class SaasPublisherKafka implements SaasPublisher {
     }
 
     @Override
-    public void publishRequest(SaasPublisher.Request request) {
-
-        request.accept(saasDaoKafka);
+    public void publishRequest(PublishTask publishTask, RequestDto requestDto) {
+        requestDto.saveInDao(saasDaoKafka, publishTask.createCallback());
     }
 
     @Override
-    public void publishRequestsWithArray(SaasPublisher.Request[] requests) {
+    public void publishRequestsWithArray(PublishTask publishTask, RequestDto[] requestsArray) {
 
         // Note: In case when our Publisher publishes more than one request (i.e. publishRequestsWithArray() )
         //  it is quite likely that they are send to different partitions. (because our topic is partitioned by hash of request.uuid)
@@ -75,8 +75,8 @@ public class SaasPublisherKafka implements SaasPublisher {
 
         // TODO AsyncResponse ?  (to improve performance/parallelizm ?)
 
-        for (SaasPublisher.Request request: requests) {
-            request.accept(saasDaoKafka);
+        for (RequestDto requestDto: requestsArray) {
+            requestDto.saveInDao(saasDaoKafka, publishTask.createCallback());
         }
     }
 

@@ -1,6 +1,6 @@
 package com.j9soft.saas.alarms.service;
 
-import com.j9soft.saas.alarms.dao.SaasDao;
+import com.j9soft.saas.alarms.dao.RequestDao;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Container for state of one call to createRequest or createRequestsWithArray, i.e. state of a batched publish.
+ * Container for state of one call to saveNewRequest or createRequestsWithArray, i.e. state of a batched publish.
  */
 public class PublishTask {
 
@@ -24,7 +24,7 @@ public class PublishTask {
         this.results = new ArrayList<Exception>();
     }
 
-    public SaasDao.Callback createCallback() {
+    public RequestDao.Callback createCallback() {
         int index;
 
         lock.lock();
@@ -38,7 +38,7 @@ public class PublishTask {
             lock.unlock();
         }
 
-        return new SaasDao.Callback() {
+        return new RequestDao.Callback() {
             @Override
             public void onCompletion(Exception exception) {
                 PublishTask.this.onCompletion(index, exception);

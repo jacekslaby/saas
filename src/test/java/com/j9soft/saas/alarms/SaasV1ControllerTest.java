@@ -1,10 +1,15 @@
 package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.controller.SaasV1Controller;
+import com.j9soft.saas.alarms.model.RequestDto;
+import com.j9soft.saas.alarms.model.RequestsListDto;
 import com.j9soft.saas.alarms.service.PublishTask;
 import com.j9soft.saas.alarms.service.SaasPublisher;
 import com.j9soft.saas.alarms.service.SaasV1Service;
-import com.j9soft.saas.alarms.testdata.*;
+import com.j9soft.saas.alarms.testdata.CapturedRequestChecker;
+import com.j9soft.saas.alarms.testdata.TestConstants;
+import com.j9soft.saas.alarms.testdata.TestDaoRequestsBuilder;
+import com.j9soft.saas.alarms.testdata.TestDtoRequests;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -13,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +36,8 @@ public class SaasV1ControllerTest {
     private SaasPublisher saasPublisherMock;
     private NotWaitingPublishTask publishTask;
     private CapturedRequestChecker checker;
+    private TestDaoRequestsBuilder builder;
+    private TestDtoRequests testDtoRequests;
 
     class NotWaitingPublishTask extends PublishTask {
         private Exception[] exceptions;
@@ -60,24 +68,26 @@ public class SaasV1ControllerTest {
 
         // Let's create test checker. (i.e. a visitor which will verify that arguments passed to the mock are correct)
         this.checker = CapturedRequestChecker.newBuilder();
+
+        builder = TestDaoRequestsBuilder.newBuilder();
+        testDtoRequests = TestDtoRequests.newBuilder(builder);
+
+        checker.addCreateEntityRequest( builder.getCreateEntityRequest() );
+        checker.addDeleteEntityRequest( builder.getDeleteEntityRequest() );
+        checker.addResyncAllEndSubdomainRequest( builder.getResyncAllEndSubdomainRequest() );
+        checker.addResyncAllStartSubdomainRequest( builder.getResyncAllStartSubdomainRequest() );
     }
 
     @Test
     public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() {
 
-        TestCreateEntityRequest testRequest = TestCreateEntityRequest.build();
-        checker.addCreateEntityRequest( testRequest.getRequestObject() );
-
-        postAndVerifyRequest(testRequest);
+        postAndVerifyRequest( testDtoRequests.getCreateAlarmDto() );
     }
 
     @Test
     public void t2_whenPostedDeleteAlarmRequest_itIsSavedToDao() {
 
-        TestDeleteEntityRequest testRequest = TestDeleteEntityRequest.build();
-        checker.addDeleteEntityRequest( testRequest.getRequestObject() );
-
-        postAndVerifyRequest(testRequest);
+        postAndVerifyRequest( testDtoRequests.getDeleteAlarmDto() );
     }
 
     @Test
@@ -85,21 +95,12 @@ public class SaasV1ControllerTest {
 
         // Our test bunch of requests is as follows:
         //   DeleteAlarmRequest, ResyncAllStartSubdomainRequest, CreateAlarmRequest and finally ResyncAllEndSubdomainRequest.
-        //
-        TestDeleteEntityRequest testDeleteRequest = TestDeleteEntityRequest.build();
-        checker.addDeleteEntityRequest( testDeleteRequest.getRequestObject() );
-        TestResyncAllStartSubdomainRequest testStartRequest = TestResyncAllStartSubdomainRequest.build();
-        checker.addResyncAllStartSubdomainRequest( testStartRequest.getRequestObject() );
-        TestCreateEntityRequest testCreateRequest = TestCreateEntityRequest.build();
-        checker.addCreateEntityRequest( testCreateRequest.getRequestObject() );
-        TestResyncAllEndSubdomainRequest testEndRequest = TestResyncAllEndSubdomainRequest.build();
-        checker.addResyncAllEndSubdomainRequest( testEndRequest.getRequestObject() );
 
-        postAndVerifyRequestsWithArray(new TestRequestData[] {
-                testDeleteRequest,
-                testStartRequest,
-                testCreateRequest,
-                testEndRequest} );
+        postAndVerifyRequestsWithArray(new RequestDto[] {
+                testDtoRequests.getDeleteAlarmDto(),
+                testDtoRequests.getResyncAllStartDto(),
+                testDtoRequests.getCreateAlarmDto(),
+                testDtoRequests.getResyncAllEndDto()} );
     }
 
     @Test
@@ -107,64 +108,50 @@ public class SaasV1ControllerTest {
 
         // Resync is when two requests come: ResyncAllStartSubdomainRequest followed by ResyncAllEndSubdomainRequest.
         //
-        TestResyncAllStartSubdomainRequest testStartRequest = TestResyncAllStartSubdomainRequest.build();
-        checker.addResyncAllStartSubdomainRequest( testStartRequest.getRequestObject() );
-        TestResyncAllEndSubdomainRequest testEndRequest = TestResyncAllEndSubdomainRequest.build();
-        checker.addResyncAllEndSubdomainRequest( testEndRequest.getRequestObject() );
 
-        postAndVerifyRequestsWithArray(new TestRequestData[] {
-                testStartRequest,
-                testEndRequest} );
+        postAndVerifyRequestsWithArray(new RequestDto[] {
+                testDtoRequests.getResyncAllStartDto(),
+                testDtoRequests.getResyncAllEndDto()} );
     }
 
-    private void postAndVerifyRequestsWithArray(TestRequestData[] testRequestDataArray) {
-
-        TestRequestData firstTestRequest = testRequestDataArray[0];
-
-        // Let's concatenate JSON from all requests.
-        StringBuilder requestJson = new StringBuilder();
-        requestJson.append('[');
-        requestJson.append(firstTestRequest.getRequestJson());
-        for (int i = 1; i < testRequestDataArray.length; i++) {
-            requestJson.append(',');
-            requestJson.append(testRequestDataArray[i].getRequestJson());
-        }
-        requestJson.append(']');
+    private void postAndVerifyRequestsWithArray(RequestDto[] requestDtoArray) {
 
         // Let's stub results to be received by SaasV1Service.
-        publishTask.setResults(new Exception[testRequestDataArray.length]);
+        publishTask.setResults(new Exception[requestDtoArray.length]);
+
+        RequestsListDto requestsListDto = new RequestsListDto();
+        requestsListDto.setRequests(requestDtoArray);
 
         // Let's POST list with all requests.
-        saas.createRequestsWithList(firstTestRequest.getDomain(), firstTestRequest.getAdapterName(),
-                requestJson.toString() );
+        saas.createRequestsWithList(TestConstants.DOMAIN, TestConstants.ADAPTER_NAME, requestsListDto);
 
         // Let's verify that requests were saved in Dao:
-        ArgumentCaptor<SaasPublisher.Request[]> argument = ArgumentCaptor.forClass(SaasPublisher.Request[].class);
-        verify(saasPublisherMock).publishRequestsWithArray(argument.capture());
-        SaasPublisher.Request[] capturedRequests = argument.getValue();
-        assertEquals("number of captured requests", capturedRequests.length, testRequestDataArray.length);
+        ArgumentCaptor<RequestDto[]> argument = ArgumentCaptor.forClass(RequestDto[].class);
+        verify(saasPublisherMock).publishRequestsWithArray(any(), argument.capture());
+        RequestDto[] capturedRequests = argument.getValue();
+        assertEquals("number of captured requests", capturedRequests.length, requestDtoArray.length);
 
         // Let's verify that expected data were delivered to SaasDao:
-        for (int i = 0; i < testRequestDataArray.length; i++) {
-            capturedRequests[i].accept(checker);
+        for (int i = 0; i < requestDtoArray.length; i++) {
+            capturedRequests[i].saveInDao(checker, null);
         }
     }
 
-    private void postAndVerifyRequest(TestRequestData testRequestData) {
+    private void postAndVerifyRequest(RequestDto requestDto) {
 
         // Let's stub results to be received by SaasV1Service.
         publishTask.setResults(new Exception[] {null});
 
         // Let's POST a create entity request.
-        saas.createRequest(testRequestData.getDomain(), testRequestData.getAdapterName(), testRequestData.getRequestJson());
+        saas.createRequest(TestConstants.DOMAIN, TestConstants.ADAPTER_NAME, requestDto);
 
         // Let's verify that it was published:
         //
-        ArgumentCaptor<SaasPublisher.Request> argument = ArgumentCaptor.forClass(SaasPublisher.Request.class);
-        verify(saasPublisherMock).publishRequest(argument.capture());
+        ArgumentCaptor<RequestDto> argument = ArgumentCaptor.forClass(RequestDto.class);
+        verify(saasPublisherMock).publishRequest(any(), argument.capture());
         //
         // Let's verify that expected data were delivered to SaasDao:
-        argument.getValue().accept(checker);
+        argument.getValue().saveInDao(checker, null);
     }
 
 }

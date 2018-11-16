@@ -49,7 +49,7 @@ paths:
               $ref: '#/components/schemas/Request'
             example:
               request_type: CreateAlarm
-              alarm_dto:
+              request_content:
                 notification_identifier: "eric2g:south:34566"
                 event_time: "2018-10-19T13:44:56.334+02:00"
                 perceived_severity: 1
@@ -79,15 +79,15 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/Request'
+              $ref: '#/components/schemas/RequestsList'
             example:
               - request_type: ResyncAllStart
+                request_content: {}
               - request_type: CreateAlarm
-                alarm_dto:
+                request_content:
                   notification_identifier: "eric2g:south:34566"
               - request_type: ResyncAllEnd
+                request_content: {}
       responses:
         '200':
           description: |
@@ -113,15 +113,34 @@ paths:
 
 components:
   schemas:
+    RequestsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Request'
     Request:
-      oneOf:
-        - $ref: '#/components/schemas/CreateAlarm'
-        - $ref: '#/components/schemas/DeleteAlarm'
-        - $ref: '#/components/schemas/PatchAlarm'
-        - $ref: '#/components/schemas/PutAlarm'
-        - $ref: '#/components/schemas/ResyncAllEnd'
-        - $ref: '#/components/schemas/ResyncAllStart'
-    ResyncAllEnd:     # "ResyncAllEnd" is a value for the request_type property (the discriminator value)
+      type: object
+      properties:
+        request_type:
+          type: string
+          enum: ["CreateAlarm", "DeleteAlarm", "PatchAlarm", "PutAlarm", "ResyncAllEnd", "ResyncAllStart"]
+          description: |
+            Value of this property is a kind of a discriminator,
+            i.e. defines what is included in property `request_content`.
+            For example if `request_type=ResyncAllEnd` then `request_content` must contain 
+             an object of `ResyncAllEnd` schema.
+        request_content:
+          oneOf:
+            - $ref: '#/components/schemas/CreateAlarm'
+            - $ref: '#/components/schemas/DeleteAlarm'
+            - $ref: '#/components/schemas/PatchAlarm'
+            - $ref: '#/components/schemas/PutAlarm'
+            - $ref: '#/components/schemas/ResyncAllEnd'
+            - $ref: '#/components/schemas/ResyncAllStart'
+      required: 
+        - request_type
+        - request_content
+        
+    ResyncAllEnd:
       description: |
         `ResyncAllEnd` request indicates end of resynchronization.
         All not delivered alarms are deleted after this request is processed.
@@ -129,90 +148,52 @@ components:
          an alarm needs to have at least one non-DeleteAlarm request 
          between `ResyncAllStart` and `ResyncAllEnd`.
         See also `ResyncAllStart`.
-      properties:
-        request_type:
-          type: string
-          enum: ["ResyncAllEnd"]
-      required: 
-        - request_type
-    ResyncAllStart:     # "ResyncAllStart" is a value for the request_type property (the discriminator value)
+    ResyncAllStart:
       description: |
         `ResyncAllStart` request initiates resynchronization. 
         It is followed by zero or more alarm requests and finally by `RequestAllEnd` request.
-      properties:
-        request_type:
-          type: string
-          enum: ["ResyncAllStart"]
-      required: 
-        - request_type
 
-    CreateAlarm:     # "CreateAlarm" is a value for the request_type property (the discriminator value)
+    CreateAlarm:
       description: |
         `CreateAlarm` request is ignored if Alarm with such notification_identifier 
         already exists. See also `PutAlarm` and `PatchAlarm`.
       type: object
       properties:
-        request_type:
-          type: string
-          enum: ["CreateAlarm"]
-        alarm_dto:
+        alarm_dto:   # Defining this property (and its schema) allows us to re-use the same AlarmDTO schema
+                     #  instead of copying all its properties to CreateAlarm, PatchAlarm, etc.
           $ref: '#/components/schemas/AlarmDTO'
       required: 
-        - request_type
         - alarm_dto
-    DeleteAlarm:     # "DeleteAlarm" is a value for the request_type property (the discriminator value)
+    DeleteAlarm:
       description: |
         `DeleteAlarm` request is ignored if Alarm with such notification_identifier 
-        does not exists. The only used property is `notification_identifier`.
+        does not exists. The only used property is `alarm_dto.notification_identifier`.
       type: object
       properties:
-        request_type:
-          type: string
-          enum: ["DeleteAlarm"]
         alarm_dto:
-          type: object
-          properties:
-            notification_identifier:
-              type: string
-              example: "eric2g:south:34566"
-            event_time:
-              description: Instant when this alarm was removed. (i.e. according to wall time)
-              type: string
-              format: dateTime
-              example:   # "See https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#date.and.time.format.examples"
-                "2018-10-19T13:44:56.334+02:00"
-          required: 
-            - notification_identifier
+          $ref: '#/components/schemas/DeleteAlarmDTO'
       required: 
-      - request_type
-      - alarm_dto
-    PatchAlarm:     # "PatchAlarm" is a value for the request_type property (the discriminator value)
+        - alarm_dto
+    PatchAlarm:
       description: |
-        `PutAlarm` request puts Alarm with such notification_identifier overwriting 
-        it if it already exists. See also `CreateAlarm` and `PutAlarm`.
+        `PatchAlarm` request patches Alarm with such notification_identifier overwriting 
+        only the provided Alarm properties, i.e. not changing other ones.
+        See also `CreateAlarm` and `PutAlarm`.
       type: object
       properties:
-        request_type:
-          type: string
-          enum: ["PatchAlarm"]
         alarm_dto:
           $ref: '#/components/schemas/AlarmDTO'
       required: 
-        - request_type
         - alarm_dto
-    PutAlarm:     # "PutAlarm" is a value for the request_type property (the discriminator value)
+    PutAlarm:
       description: |
         `PutAlarm` request puts Alarm with such notification_identifier overwriting 
         it if it already exists. See also `CreateAlarm` and `PatchAlarm`.
       type: object
       properties:
-        request_type:
-          type: string
-          enum: ["PutAlarm"]
         alarm_dto:
           $ref: '#/components/schemas/AlarmDTO'
       required: 
-        - request_type
         - alarm_dto
         
     AlarmDTO:
@@ -243,6 +224,24 @@ components:
         example:
           additional_text: "Detailed information"
           managed_object_instance: "BTS:333"
+          
+    DeleteAlarmDTO:
+      description: | 
+        DeleteAlarmDTO is used to transport Alarm properties from a client to the SA repository
+         for a DeleteAlarm request.
+      type: object
+      properties:
+        notification_identifier:
+          type: string
+          example: "eric2g:south:34566"
+        event_time:
+          description: Instant when this alarm was removed. (i.e. according to wall time)
+          type: string
+          format: dateTime
+          example:   # "See https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#date.and.time.format.examples"
+            "2018-10-19T13:44:56.334+02:00"
+      required: 
+        - notification_identifier
         
     RequestCreatedResponse:
       type: object

@@ -1,0 +1,133 @@
+package com.j9soft.saas.alarms.dao;
+
+import com.j9soft.saas.alarms.model.*;
+import org.openapitools.client.model.CreateAlarm;
+import org.openapitools.client.model.DeleteAlarm;
+
+import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.j9soft.saas.alarms.model.Definitions.*;
+
+public class DaoRequestBuilderV1 implements DaoRequestBuilder {
+
+    private String domainName;
+    private String adapterName;
+
+    public static DaoRequestBuilderV1 newBuilder(String domainName, String adapterName) {
+        return new DaoRequestBuilderV1(domainName, adapterName);
+    }
+
+    protected DaoRequestBuilderV1(String domainName, String adapterName) {
+        this.domainName = domainName;
+        this.adapterName = adapterName;
+    }
+
+    @Override
+    public CreateEntityRequestV1 buildCreateEntityRequest(CreateAlarm createAlarm) {
+
+        // https://stackoverflow.com/questions/6038136/how-do-i-parse-rfc-3339-datetimes-with-java#6038922
+        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(createAlarm.getAlarmDto().getEventTime());
+
+        if (createAlarm.getAlarmDto().getPerceivedSeverity() < 0) {
+            throw new RuntimeException("@TODO: better exception handling");
+        }
+
+        // Prepare map with Alarm attributes.
+        //
+        Map<CharSequence, CharSequence> alarmAttributes = new HashMap<>();
+        // - Add additional Alarm attributes to a HashMap.
+        alarmAttributes.putAll(createAlarm.getAlarmDto().getAdditionalProperties());
+        // - Add required attributes to the same HashMap.
+        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__EVENT_TIME, createAlarm.getAlarmDto().getEventTime());
+        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, createAlarm.getAlarmDto().getNotificationIdentifier());
+        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__PERCEIVED_SEVERITY, String.valueOf(createAlarm.getAlarmDto().getPerceivedSeverity()));
+
+        // Question: Why do we use a generic CreateEntityRequest type instead of a specialized CreateSourceAlarmRequest ?
+        //
+        // Answer: The target Topic is for _generic_ entities (e.g. Alarms, other objects)
+        //  and generic subdomains (e.g. Adapters, other groups of objects). That is why we have:
+        //   CreateEntityRequest(uuid,entityTypeName(string)=SourceAlarm,domainName,subdomainName=adapterName,lineageStartDate,entityIdInSubdomain=notificationIdentifier,attributesMap)
+        //   ResyncAllStartSubdomainRequest(uuid,subdomainName=adapterName,entityTypeName(string)=SourceAlarm)
+        //
+        // Note: We do not generalize any further (e.g. to have EntityRequest with requestType=CreateEntity,
+        //    SubdomainRequest with requestType=ResyncAllStart)
+        //  because we will introduce new request types later (i.e. new schemas within the same version v1)
+        //  and we want these changes to be forward compatible.
+        //   (i.e. Had we added a new value to an enum  (e.g. 'DeleteRequest' to EntityRequest.requestType)
+        //     then old clients would not have understood a request written by a new producer.
+        //     Safer is to add a new request schema (i.e. a new class), which may be ignored by old clients.)
+        //
+        // Note: Topic schemas like CreateEntityRequest do not enforce Alarm attributes
+        //  nor their types (e.g. that event_time has type: string format: dateTime)
+        //  because we do not want to update these Kafka schemas when we add Alarm attributes.
+        //  (BUT where it is needed these types and their format may be enforced by Alarm REST service.
+        //   The REST service is easier to evolve and is dedicated to Source Alarms.)
+        //
+        return CreateEntityRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(System.currentTimeMillis())
+                .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
+                .setEntityDomainName(domainName)
+                .setEntitySubdomainName(adapterName)
+                .setEntityIdInSubdomain(createAlarm.getAlarmDto().getNotificationIdentifier())
+                .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
+                .setEntityAttributes(alarmAttributes)
+                .build();
+    }
+
+    @Override
+    public DeleteEntityRequestV1 buildDeleteEntityRequest(DeleteAlarm deleteAlarm) {
+
+        if (deleteAlarm.getAlarmDto().getNotificationIdentifier() == null
+                || deleteAlarm.getAlarmDto().getNotificationIdentifier().length() < 1) {
+            throw new RuntimeException("@TODO: better exception handling");
+        }
+
+        // https://stackoverflow.com/questions/6038136/how-do-i-parse-rfc-3339-datetimes-with-java#6038922
+        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(deleteAlarm.getAlarmDto().getEventTime());
+
+        return DeleteEntityRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(System.currentTimeMillis())
+                .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
+                .setEntityDomainName(domainName)
+                .setEntitySubdomainName(adapterName)
+                .setEntityIdInSubdomain(deleteAlarm.getAlarmDto().getNotificationIdentifier())
+                .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
+                .build();
+    }
+
+    @Override
+    public ResyncAllEndSubdomainRequestV1 buildResyncAllEnd() {
+
+        long entryDate = System.currentTimeMillis();
+
+        return ResyncAllEndSubdomainRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(entryDate)
+                .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
+                .setEntityDomainName(domainName)
+                .setEntitySubdomainName(adapterName)
+                .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
+                .build();
+    }
+
+    @Override
+    public ResyncAllStartSubdomainRequestV1 buildResyncAllStart() {
+
+        long entryDate = System.currentTimeMillis();
+
+        return ResyncAllStartSubdomainRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(entryDate)
+                .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
+                .setEntityDomainName(domainName)
+                .setEntitySubdomainName(adapterName)
+                .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
+                .build();
+    }
+
+}

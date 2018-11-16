@@ -18,22 +18,22 @@ import org.springframework.stereotype.Service;
 public class SaasDaoDevMock implements SaasDao {
 
     @Override
-    public void createRequest(CreateEntityRequestV1 request, SaasDao.Callback callback) {
+    public void saveNewRequest(CreateEntityRequestV1 request, RequestDao.Callback callback) {
 
     }
 
     @Override
-    public void createRequest(DeleteEntityRequestV1 request, SaasDao.Callback callback) {
+    public void saveNewRequest(DeleteEntityRequestV1 request, RequestDao.Callback callback) {
 
     }
 
     @Override
-    public void createRequest(ResyncAllStartSubdomainRequestV1 request, SaasDao.Callback callback) {
+    public void saveNewRequest(ResyncAllStartSubdomainRequestV1 request, RequestDao.Callback callback) {
 
     }
 
     @Override
-    public void createRequest(ResyncAllEndSubdomainRequestV1 request, SaasDao.Callback callback) {
+    public void saveNewRequest(ResyncAllEndSubdomainRequestV1 request, RequestDao.Callback callback) {
 
     }
 
