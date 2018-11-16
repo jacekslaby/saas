@@ -73,8 +73,6 @@ public class SaasPublisherKafka implements SaasPublisher {
         //  (however - does it make sense ? Kafka will provide own retries (TODO configure it),
         //    so what is the purpose for a client to try again on its own ? Hm... maybe in 1h kafka will be up again ?)
 
-        // TODO AsyncResponse ?  (to improve performance/parallelizm ?)
-
         for (RequestDto requestDto: requestsArray) {
             requestDto.saveInDao(saasDaoKafka, publishTask.createCallback());
         }

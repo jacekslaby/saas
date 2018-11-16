@@ -50,6 +50,8 @@ public class SaasV1Service {
             throw new RuntimeException("Unexpected error. The request could not have been created. Please re-try later.");
         }
 
+        // TODO AsyncResponse ?  (to improve performance/parallelizm ?)
+        //
         // Build response.
         if (results[0] == null) {
             // RequestDto was created successfully in Dao.
@@ -75,6 +77,8 @@ public class SaasV1Service {
         PublishTask publishTask = saasPublisher.createNewTask();
         saasPublisher.publishRequestsWithArray(publishTask, requestsArray);
 
+        // TODO AsyncResponse ?  (to improve performance/parallelizm ?)
+        //
         // Blocking wait for results.
         Exception[] results;
         try {
