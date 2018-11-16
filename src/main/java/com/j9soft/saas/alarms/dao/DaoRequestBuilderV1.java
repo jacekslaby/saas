@@ -1,8 +1,8 @@
 package com.j9soft.saas.alarms.dao;
 
 import com.j9soft.saas.alarms.model.*;
-import org.openapitools.client.model.CreateAlarm;
-import org.openapitools.client.model.DeleteAlarm;
+import org.openapitools.client.model.CreateAlarmRequest;
+import org.openapitools.client.model.DeleteAlarmRequest;
 
 import java.time.OffsetDateTime;
 import java.util.HashMap;
@@ -26,12 +26,12 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
     }
 
     @Override
-    public CreateEntityRequestV1 buildCreateEntityRequest(CreateAlarm createAlarm) {
+    public CreateEntityRequestV1 buildCreateEntityRequest(CreateAlarmRequest createAlarmRequest) {
 
         // https://stackoverflow.com/questions/6038136/how-do-i-parse-rfc-3339-datetimes-with-java#6038922
-        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(createAlarm.getAlarmDto().getEventTime());
+        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(createAlarmRequest.getAlarmDto().getEventTime());
 
-        if (createAlarm.getAlarmDto().getPerceivedSeverity() < 0) {
+        if (createAlarmRequest.getAlarmDto().getPerceivedSeverity() < 0) {
             throw new RuntimeException("@TODO: better exception handling");
         }
 
@@ -39,11 +39,13 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
         //
         Map<CharSequence, CharSequence> alarmAttributes = new HashMap<>();
         // - Add additional Alarm attributes to a HashMap.
-        alarmAttributes.putAll(createAlarm.getAlarmDto().getAdditionalProperties());
+        alarmAttributes.putAll(createAlarmRequest.getAlarmDto().getAdditionalProperties());
         // - Add required attributes to the same HashMap.
-        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__EVENT_TIME, createAlarm.getAlarmDto().getEventTime());
-        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, createAlarm.getAlarmDto().getNotificationIdentifier());
-        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__PERCEIVED_SEVERITY, String.valueOf(createAlarm.getAlarmDto().getPerceivedSeverity()));
+        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__EVENT_TIME, createAlarmRequest.getAlarmDto().getEventTime());
+        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER,
+                createAlarmRequest.getAlarmDto().getNotificationIdentifier());
+        alarmAttributes.put(ALARM_ATTRIBUTE_NAME__PERCEIVED_SEVERITY,
+                String.valueOf(createAlarmRequest.getAlarmDto().getPerceivedSeverity()));
 
         // Question: Why do we use a generic CreateEntityRequest type instead of a specialized CreateSourceAlarmRequest ?
         //
@@ -72,22 +74,22 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
                 .setEntityDomainName(domainName)
                 .setEntitySubdomainName(adapterName)
-                .setEntityIdInSubdomain(createAlarm.getAlarmDto().getNotificationIdentifier())
+                .setEntityIdInSubdomain(createAlarmRequest.getAlarmDto().getNotificationIdentifier())
                 .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .setEntityAttributes(alarmAttributes)
                 .build();
     }
 
     @Override
-    public DeleteEntityRequestV1 buildDeleteEntityRequest(DeleteAlarm deleteAlarm) {
+    public DeleteEntityRequestV1 buildDeleteEntityRequest(DeleteAlarmRequest deleteAlarmRequest) {
 
-        if (deleteAlarm.getAlarmDto().getNotificationIdentifier() == null
-                || deleteAlarm.getAlarmDto().getNotificationIdentifier().length() < 1) {
+        if (deleteAlarmRequest.getAlarmDto().getNotificationIdentifier() == null
+                || deleteAlarmRequest.getAlarmDto().getNotificationIdentifier().length() < 1) {
             throw new RuntimeException("@TODO: better exception handling");
         }
 
         // https://stackoverflow.com/questions/6038136/how-do-i-parse-rfc-3339-datetimes-with-java#6038922
-        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(deleteAlarm.getAlarmDto().getEventTime());
+        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(deleteAlarmRequest.getAlarmDto().getEventTime());
 
         return DeleteEntityRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
@@ -95,7 +97,7 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
                 .setEntityDomainName(domainName)
                 .setEntitySubdomainName(adapterName)
-                .setEntityIdInSubdomain(deleteAlarm.getAlarmDto().getNotificationIdentifier())
+                .setEntityIdInSubdomain(deleteAlarmRequest.getAlarmDto().getNotificationIdentifier())
                 .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
     }

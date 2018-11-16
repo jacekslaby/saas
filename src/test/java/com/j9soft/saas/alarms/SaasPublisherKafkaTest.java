@@ -56,7 +56,7 @@ public class SaasPublisherKafkaTest {
     public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() {
 
         // Let's publish a create entity request.
-        saasPublisher.publishRequest(publishTaskMock, testDtoRequests.getCreateAlarmDto());
+        saasPublisher.publishRequest(publishTaskMock, testDtoRequests.getCreateAlarmRequestDto());
 
         // Let's verify that it was saved in Dao:
         //
@@ -67,7 +67,7 @@ public class SaasPublisherKafkaTest {
     public void t2_whenPostedDeleteAlarmRequest_itIsSavedToDao() {
 
         // Let's publish a delete entity request.
-        saasPublisher.publishRequest(publishTaskMock, testDtoRequests.getDeleteAlarmDto());
+        saasPublisher.publishRequest(publishTaskMock, testDtoRequests.getDeleteAlarmRequestDto());
 
         // Let's verify that it was saved in Dao:
         //
@@ -78,7 +78,7 @@ public class SaasPublisherKafkaTest {
     public void t3_whenPostedResyncAllStartSubdomainRequest_itIsSavedToDao() {
 
         // Let's publish a resync start request.
-        saasPublisher.publishRequest(publishTaskMock, testDtoRequests.getResyncAllStartDto());
+        saasPublisher.publishRequest(publishTaskMock, testDtoRequests.getResyncAllAlarmsStartRequestDto());
 
         // Let's verify that it was saved in Dao:
         //
@@ -89,7 +89,7 @@ public class SaasPublisherKafkaTest {
     public void t4_whenPostedResyncAllEndSubdomainRequest_itIsSavedToDao() {
 
         // Let's publish a resync end request.
-        saasPublisher.publishRequest(publishTaskMock, testDtoRequests.getResyncAllEndDto());
+        saasPublisher.publishRequest(publishTaskMock, testDtoRequests.getResyncAllAlarmsEndRequestDto());
 
         // Let's verify that it was saved in Dao:
         //

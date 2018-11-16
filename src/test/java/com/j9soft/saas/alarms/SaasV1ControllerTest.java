@@ -81,13 +81,13 @@ public class SaasV1ControllerTest {
     @Test
     public void t1_whenPostedCreateAlarmRequest_itIsSavedToDao() {
 
-        postAndVerifyRequest( testDtoRequests.getCreateAlarmDto() );
+        postAndVerifyRequest( testDtoRequests.getCreateAlarmRequestDto() );
     }
 
     @Test
     public void t2_whenPostedDeleteAlarmRequest_itIsSavedToDao() {
 
-        postAndVerifyRequest( testDtoRequests.getDeleteAlarmDto() );
+        postAndVerifyRequest( testDtoRequests.getDeleteAlarmRequestDto() );
     }
 
     @Test
@@ -97,10 +97,10 @@ public class SaasV1ControllerTest {
         //   DeleteAlarmRequest, ResyncAllStartSubdomainRequest, CreateAlarmRequest and finally ResyncAllEndSubdomainRequest.
 
         postAndVerifyRequestsWithArray(new RequestDto[] {
-                testDtoRequests.getDeleteAlarmDto(),
-                testDtoRequests.getResyncAllStartDto(),
-                testDtoRequests.getCreateAlarmDto(),
-                testDtoRequests.getResyncAllEndDto()} );
+                testDtoRequests.getDeleteAlarmRequestDto(),
+                testDtoRequests.getResyncAllAlarmsStartRequestDto(),
+                testDtoRequests.getCreateAlarmRequestDto(),
+                testDtoRequests.getResyncAllAlarmsEndRequestDto()} );
     }
 
     @Test
@@ -110,8 +110,8 @@ public class SaasV1ControllerTest {
         //
 
         postAndVerifyRequestsWithArray(new RequestDto[] {
-                testDtoRequests.getResyncAllStartDto(),
-                testDtoRequests.getResyncAllEndDto()} );
+                testDtoRequests.getResyncAllAlarmsStartRequestDto(),
+                testDtoRequests.getResyncAllAlarmsEndRequestDto()} );
     }
 
     private void postAndVerifyRequestsWithArray(RequestDto[] requestDtoArray) {

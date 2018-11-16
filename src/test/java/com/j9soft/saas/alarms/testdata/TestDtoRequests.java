@@ -8,10 +8,10 @@ import com.j9soft.saas.alarms.model.*;
  */
 public class TestDtoRequests {
 
-    private CreateAlarmDto createAlarmDto;
-    private DeleteAlarmDto deleteAlarmDto;
-    private ResyncAllStartDto resyncAllStartDto;
-    private ResyncAllEndDto resyncAllEndDto;
+    private CreateAlarmRequestDto createAlarmRequestDto;
+    private DeleteAlarmRequestDto deleteAlarmRequestDto;
+    private ResyncAllAlarmsStartRequestDto resyncAllAlarmsStartRequestDto;
+    private ResyncAllAlarmsEndRequestDto resyncAllAlarmsEndRequestDto;
 
     private TestDtoRequestsContents dtoRequestsContents;
 
@@ -20,36 +20,36 @@ public class TestDtoRequests {
 
         result.dtoRequestsContents = TestDtoRequestsContents.newBuilder();
 
-        result.createAlarmDto = new CreateAlarmDto();
-        result.createAlarmDto.setRequestContent(result.dtoRequestsContents.getCreateAlarm());
-        result.createAlarmDto.buildDaoRequest(builder);
+        result.createAlarmRequestDto = new CreateAlarmRequestDto();
+        result.createAlarmRequestDto.setRequestContent(result.dtoRequestsContents.getCreateAlarmRequest());
+        result.createAlarmRequestDto.buildDaoRequest(builder);
 
-        result.deleteAlarmDto = new DeleteAlarmDto();
-        result.deleteAlarmDto.setRequestContent(result.dtoRequestsContents.getDeleteAlarm());
-        result.deleteAlarmDto.buildDaoRequest(builder);
+        result.deleteAlarmRequestDto = new DeleteAlarmRequestDto();
+        result.deleteAlarmRequestDto.setRequestContent(result.dtoRequestsContents.getDeleteAlarmRequest());
+        result.deleteAlarmRequestDto.buildDaoRequest(builder);
 
-        result.resyncAllStartDto = new ResyncAllStartDto();
-        result.resyncAllStartDto.buildDaoRequest(builder);
+        result.resyncAllAlarmsStartRequestDto = new ResyncAllAlarmsStartRequestDto();
+        result.resyncAllAlarmsStartRequestDto.buildDaoRequest(builder);
 
-        result.resyncAllEndDto = new ResyncAllEndDto();
-        result.resyncAllEndDto.buildDaoRequest(builder);
+        result.resyncAllAlarmsEndRequestDto = new ResyncAllAlarmsEndRequestDto();
+        result.resyncAllAlarmsEndRequestDto.buildDaoRequest(builder);
 
         return result;
     }
 
-    public CreateAlarmDto getCreateAlarmDto() {
-        return createAlarmDto;
+    public CreateAlarmRequestDto getCreateAlarmRequestDto() {
+        return createAlarmRequestDto;
     }
 
-    public DeleteAlarmDto getDeleteAlarmDto() {
-        return deleteAlarmDto;
+    public DeleteAlarmRequestDto getDeleteAlarmRequestDto() {
+        return deleteAlarmRequestDto;
     }
 
-    public ResyncAllStartDto getResyncAllStartDto() {
-        return resyncAllStartDto;
+    public ResyncAllAlarmsStartRequestDto getResyncAllAlarmsStartRequestDto() {
+        return resyncAllAlarmsStartRequestDto;
     }
 
-    public ResyncAllEndDto getResyncAllEndDto() {
-        return resyncAllEndDto;
+    public ResyncAllAlarmsEndRequestDto getResyncAllAlarmsEndRequestDto() {
+        return resyncAllAlarmsEndRequestDto;
     }
 }

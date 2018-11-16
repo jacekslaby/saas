@@ -5,8 +5,8 @@ import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
 import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
 import com.j9soft.saas.alarms.model.ResyncAllEndSubdomainRequestV1;
 import com.j9soft.saas.alarms.model.ResyncAllStartSubdomainRequestV1;
-import org.openapitools.client.model.CreateAlarm;
-import org.openapitools.client.model.DeleteAlarm;
+import org.openapitools.client.model.CreateAlarmRequest;
+import org.openapitools.client.model.DeleteAlarmRequest;
 
 /**
  * For test purposes this builder additionally gathers created all DAO requests.
@@ -26,7 +26,7 @@ public class TestDaoRequestsBuilder extends DaoRequestBuilderV1 {
     private String domainName;
     private String adapterName;
 
-    private CreateAlarm createAlarmRequest;
+    private CreateAlarmRequest createAlarmRequest;
 
     public static TestDaoRequestsBuilder newBuilder() {
         return new TestDaoRequestsBuilder();
@@ -62,16 +62,16 @@ public class TestDaoRequestsBuilder extends DaoRequestBuilderV1 {
     }
 
     @Override
-    public CreateEntityRequestV1 buildCreateEntityRequest(CreateAlarm createAlarm) {
+    public CreateEntityRequestV1 buildCreateEntityRequest(CreateAlarmRequest createAlarmRequest) {
 
-        createEntityRequestV1 = super.buildCreateEntityRequest(createAlarm);
+        createEntityRequestV1 = super.buildCreateEntityRequest(createAlarmRequest);
         return createEntityRequestV1;
     }
 
     @Override
-    public DeleteEntityRequestV1 buildDeleteEntityRequest(DeleteAlarm deleteAlarm) {
+    public DeleteEntityRequestV1 buildDeleteEntityRequest(DeleteAlarmRequest deleteAlarmRequest) {
 
-        deleteEntityRequestV1 = super.buildDeleteEntityRequest(deleteAlarm);
+        deleteEntityRequestV1 = super.buildDeleteEntityRequest(deleteAlarmRequest);
         return deleteEntityRequestV1;
     }
 

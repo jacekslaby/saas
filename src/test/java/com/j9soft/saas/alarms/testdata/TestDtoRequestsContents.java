@@ -10,15 +10,15 @@ import java.time.OffsetDateTime;
 public class TestDtoRequestsContents {
     private static final String ALARM_NOID = "eric2g:341";
 
-    private CreateAlarm createAlarm;
-    private DeleteAlarm deleteAlarm;
+    private CreateAlarmRequest createAlarmRequest;
+    private DeleteAlarmRequest deleteAlarmRequest;
 
-    public CreateAlarm getCreateAlarm() {
-        return createAlarm;
+    public CreateAlarmRequest getCreateAlarmRequest() {
+        return createAlarmRequest;
     }
 
-    public DeleteAlarm getDeleteAlarm() {
-        return deleteAlarm;
+    public DeleteAlarmRequest getDeleteAlarmRequest() {
+        return deleteAlarmRequest;
     }
 
     public static TestDtoRequestsContents newBuilder() {
@@ -28,7 +28,7 @@ public class TestDtoRequestsContents {
         String eventTimeString = "2018-10-19T13:44:56.334+02:00";
         long eventTime = OffsetDateTime.parse(eventTimeString).toInstant().toEpochMilli();
 
-        // Let's create CreateAlarm.
+        // Let's create CreateAlarmRequest.
         AlarmDTOAdditionalProperties alarmDTOAdditionalPropertiesForApi = new AlarmDTOAdditionalProperties();
         alarmDTOAdditionalPropertiesForApi.put("additional_text", "Detailed information");
         alarmDTOAdditionalPropertiesForApi.put("managed_object_instance", "BTS:333");
@@ -37,15 +37,15 @@ public class TestDtoRequestsContents {
                 .eventTime(eventTimeString)
                 .perceivedSeverity(1)
                 .additionalProperties(alarmDTOAdditionalPropertiesForApi);
-        result.createAlarm = new CreateAlarm()
+        result.createAlarmRequest = new CreateAlarmRequest()
                 .alarmDto(alarmDto);
 
-        // Let's create DeleteAlarm.
-        DeleteAlarmDTO deleteAlarmDto = new DeleteAlarmDTO()
+        // Let's create DeleteAlarmRequest.
+        DeletedAlarmDTO deletedAlarmDto = new DeletedAlarmDTO()
                 .notificationIdentifier(ALARM_NOID)
                 .eventTime(eventTimeString);
-        result.deleteAlarm = new DeleteAlarm()
-                .alarmDto(deleteAlarmDto);
+        result.deleteAlarmRequest = new DeleteAlarmRequest()
+                .alarmDto(deletedAlarmDto);
 
         return result;
     }
