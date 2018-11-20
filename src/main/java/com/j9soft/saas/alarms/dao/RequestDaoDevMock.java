@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
  */
 @Profile("default")
 @Service
-public class SaasDaoDevMock implements SaasDao {
+public class RequestDaoDevMock implements RequestDao {
 
     @Override
     public void saveNewRequest(CreateEntityRequestV1 request, RequestDao.Callback callback) {

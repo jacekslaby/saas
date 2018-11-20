@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
  */
 @Profile({"prod","kafka-dev"})
 @Service
-public class SaasDaoKafka implements SaasDao {
+public class RequestDaoKafka implements RequestDao {
 
     private String topicName;
     private KafkaProducer<String, Object> producer;
@@ -37,7 +37,7 @@ public class SaasDaoKafka implements SaasDao {
      *  and this class will get autowired here. (btw: In this class it is important to remember about a destroy method to close a producer.)
      */
     @Autowired
-    public SaasDaoKafka(KafkaConnector connector) {
+    public RequestDaoKafka(KafkaConnector connector) {
         this.topicName = connector.getTopicName();
         this.producer = connector.getProducer();
     }

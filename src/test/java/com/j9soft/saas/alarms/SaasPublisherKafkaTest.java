@@ -1,7 +1,7 @@
 package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.dao.RequestDao;
-import com.j9soft.saas.alarms.dao.SaasDaoKafka;
+import com.j9soft.saas.alarms.dao.RequestDaoKafka;
 import com.j9soft.saas.alarms.service.PublishTask;
 import com.j9soft.saas.alarms.service.SaasPublisher;
 import com.j9soft.saas.alarms.service.SaasPublisherKafka;
@@ -19,14 +19,14 @@ import static org.mockito.Mockito.when;
 
 /*
  * The tests from this class verify
- * whether expected operations are executed on SaasDaoKafka instance
+ * whether expected operations are executed on RequestDaoKafka instance
  * as a result of a request to SaasPublisherKafka.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SaasPublisherKafkaTest {
 
     private SaasPublisher saasPublisher;
-    private SaasDaoKafka saasDaoMock;
+    private RequestDaoKafka requestDaoMock;
     private PublishTask publishTaskMock;
     private RequestDao.Callback callbackMock;
     private TestDaoRequestsBuilder builder;
@@ -37,7 +37,7 @@ public class SaasPublisherKafkaTest {
 
         // Let's create a Dao mock which will be checked for expected operation calls.
         //
-        saasDaoMock = Mockito.mock(SaasDaoKafka.class);
+        requestDaoMock = Mockito.mock(RequestDaoKafka.class);
 
         // Let's create a PublishTask mock which will be checked for expected operation calls.
         //
@@ -46,7 +46,7 @@ public class SaasPublisherKafkaTest {
         when(publishTaskMock.createCallback()).thenReturn(callbackMock);
 
         // Let's create the tested bean.
-        saasPublisher = new SaasPublisherKafka(this.saasDaoMock);
+        saasPublisher = new SaasPublisherKafka(this.requestDaoMock);
 
         builder = TestDaoRequestsBuilder.newBuilder();
         testDtoRequests = TestDtoRequests.newBuilder(builder);
@@ -60,7 +60,7 @@ public class SaasPublisherKafkaTest {
 
         // Let's verify that it was saved in Dao:
         //
-        verify(saasDaoMock).saveNewRequest(same(builder.getCreateEntityRequest()), same(callbackMock));
+        verify(requestDaoMock).saveNewRequest(same(builder.getCreateEntityRequest()), same(callbackMock));
     }
 
     @Test
@@ -71,7 +71,7 @@ public class SaasPublisherKafkaTest {
 
         // Let's verify that it was saved in Dao:
         //
-        verify(saasDaoMock).saveNewRequest(same(builder.getDeleteEntityRequest()), same(callbackMock));
+        verify(requestDaoMock).saveNewRequest(same(builder.getDeleteEntityRequest()), same(callbackMock));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class SaasPublisherKafkaTest {
 
         // Let's verify that it was saved in Dao:
         //
-        verify(saasDaoMock).saveNewRequest(same(builder.getResyncAllStartSubdomainRequest()), same(callbackMock));
+        verify(requestDaoMock).saveNewRequest(same(builder.getResyncAllStartSubdomainRequest()), same(callbackMock));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class SaasPublisherKafkaTest {
 
         // Let's verify that it was saved in Dao:
         //
-        verify(saasDaoMock).saveNewRequest(same(builder.getResyncAllEndSubdomainRequest()), same(callbackMock));
+        verify(requestDaoMock).saveNewRequest(same(builder.getResyncAllEndSubdomainRequest()), same(callbackMock));
     }
 
 }

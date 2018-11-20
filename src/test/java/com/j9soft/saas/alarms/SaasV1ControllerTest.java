@@ -131,7 +131,7 @@ public class SaasV1ControllerTest {
         RequestDto[] capturedRequests = argument.getValue();
         assertEquals("number of captured requests", capturedRequests.length, requestDtoArray.length);
 
-        // Let's verify that expected data were delivered to SaasDao:
+        // Let's verify that expected data were delivered to Dao:
         for (int i = 0; i < requestDtoArray.length; i++) {
             capturedRequests[i].saveInDao(checker, null);
         }
@@ -150,7 +150,7 @@ public class SaasV1ControllerTest {
         ArgumentCaptor<RequestDto> argument = ArgumentCaptor.forClass(RequestDto.class);
         verify(saasPublisherMock).publishRequest(any(), argument.capture());
         //
-        // Let's verify that expected data were delivered to SaasDao:
+        // Let's verify that expected data were delivered to Dao:
         argument.getValue().saveInDao(checker, null);
     }
 

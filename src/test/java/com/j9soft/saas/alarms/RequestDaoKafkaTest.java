@@ -1,7 +1,7 @@
 package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.dao.RequestDao;
-import com.j9soft.saas.alarms.dao.SaasDaoKafka;
+import com.j9soft.saas.alarms.dao.RequestDaoKafka;
 import com.j9soft.saas.alarms.testconfig.SaasDaoKafkaTestConfiguration;
 import com.j9soft.saas.alarms.testconfig.SaasDaoKafkaTestEmbeddedBroker;
 import com.j9soft.saas.alarms.testdata.TestDaoRequestsBuilder;
@@ -18,15 +18,15 @@ import static org.mockito.ArgumentMatchers.isNull;
 /*
  * The tests from this class verify whether ProducerRecords are correctly prepared
  * and send to a Kafka topic (i.e. to the embedded Kafka instance)
- * when a method of SaasDaoKafka is invoked.
+ * when a method of RequestDaoKafka is invoked.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class SaasDaoKafkaTest {
+public class RequestDaoKafkaTest {
 
     private static SaasDaoKafkaTestEmbeddedBroker embeddedBroker;
     private static SaasDaoKafkaTestConfiguration testConfig;
 
-    protected SaasDaoKafka kafkaDao;
+    protected RequestDaoKafka kafkaDao;
     private RequestDao.Callback callbackMock;
     private TestDaoRequestsBuilder builder;
     private TestDtoRequests testDtoRequests;

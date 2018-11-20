@@ -4,7 +4,7 @@ import com.j9soft.saas.alarms.model.RequestDto;
 
 /**
  * Objects with this interface are used by Saas service (SaasV1Service)
- * as an intermediate layer to DAO. (SaasDao)
+ * as an intermediate layer to DAO.
  */
 public interface SaasPublisher {
 

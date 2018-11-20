@@ -1,7 +1,7 @@
 package com.j9soft.saas.alarms.testconfig;
 
 
-import com.j9soft.saas.alarms.dao.SaasDaoKafka;
+import com.j9soft.saas.alarms.dao.RequestDaoKafka;
 
 public class SaasDaoKafkaTestConfiguration {
 
@@ -12,8 +12,8 @@ public class SaasDaoKafkaTestConfiguration {
         client.connect("127.0.0.1", 9092);
     }
 
-    public SaasDaoKafka getDao() {
-        return new SaasDaoKafka(client);
+    public RequestDaoKafka getDao() {
+        return new RequestDaoKafka(client);
     }
 
     public String getTopicName() {

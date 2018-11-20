@@ -1,6 +1,6 @@
 package com.j9soft.saas.alarms.service;
 
-import com.j9soft.saas.alarms.dao.SaasDaoKafka;
+import com.j9soft.saas.alarms.dao.RequestDaoKafka;
 import com.j9soft.saas.alarms.model.RequestDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,21 +19,21 @@ public class SaasPublisherKafka implements SaasPublisher {
 
     private static final Logger logger = LoggerFactory.getLogger(SaasPublisherKafka.class);
 
-    private SaasDaoKafka saasDaoKafka;
+    private RequestDaoKafka requestDaoKafka;
 
     /**
      * Note: Autowire - The idea is that it is possible to create a new class annotated as @Configuration
      *  and this class will get autowired here. (btw: In this class it is important to remember about a destroy method to close a producer.)
      */
     @Autowired
-    public SaasPublisherKafka(SaasDaoKafka saasDaoKafka) {
+    public SaasPublisherKafka(RequestDaoKafka requestDaoKafka) {
 
-        this.saasDaoKafka = saasDaoKafka;
+        this.requestDaoKafka = requestDaoKafka;
     }
 
     @Override
     public void publishRequest(PublishTask publishTask, RequestDto requestDto) {
-        requestDto.saveInDao(saasDaoKafka, publishTask.createCallback());
+        requestDto.saveInDao(requestDaoKafka, publishTask.createCallback());
     }
 
     @Override
@@ -74,7 +74,7 @@ public class SaasPublisherKafka implements SaasPublisher {
         //    so what is the purpose for a client to try again on its own ? Hm... maybe in 1h kafka will be up again ?)
 
         for (RequestDto requestDto: requestsArray) {
-            requestDto.saveInDao(saasDaoKafka, publishTask.createCallback());
+            requestDto.saveInDao(requestDaoKafka, publishTask.createCallback());
         }
     }
 
