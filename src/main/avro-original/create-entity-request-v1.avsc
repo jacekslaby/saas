@@ -1,4 +1,4 @@
-{"namespace": "com.j9soft.saas.alarms.model",
+{"namespace": "com.j9soft.krepository.v1.commandsmodel",
   "type": "record",
   "name": "CreateEntityRequestV1",
   "doc": "Type for requests which create a new entity. Note: Evolution of this schema (i.e. changes to this type) _strictly_ maintains it full compatible. Full compatibility means schemas are backward and forward compatible. Note: Not compatible changes require defining a new type (schema), e.g. 'V2', 'V3', etc.",

@@ -1,10 +1,10 @@
 package com.j9soft.saas.alarms.dao;
 
+import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1;
 import com.j9soft.saas.alarms.config.KafkaConnector;
-import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
-import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
-import com.j9soft.saas.alarms.model.ResyncAllEndSubdomainRequestV1;
-import com.j9soft.saas.alarms.model.ResyncAllStartSubdomainRequestV1;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Autowired;

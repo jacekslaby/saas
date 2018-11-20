@@ -1,6 +1,10 @@
 package com.j9soft.saas.alarms.dao;
 
-import com.j9soft.saas.alarms.model.*;
+import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1;
+import com.j9soft.saas.alarms.model.Definitions;
 import org.openapitools.client.model.CreateAlarmRequest;
 import org.openapitools.client.model.DeleteAlarmRequest;
 

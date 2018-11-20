@@ -1,4 +1,4 @@
-{"namespace": "com.j9soft.saas.alarms.model",
+{"namespace": "com.j9soft.krepository.v1.commandsmodel",
   "type": "record",
   "name": "DeleteEntityRequestV1",
   "fields": [

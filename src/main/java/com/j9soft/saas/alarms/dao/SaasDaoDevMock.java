@@ -1,9 +1,9 @@
 package com.j9soft.saas.alarms.dao;
 
-import com.j9soft.saas.alarms.model.CreateEntityRequestV1;
-import com.j9soft.saas.alarms.model.DeleteEntityRequestV1;
-import com.j9soft.saas.alarms.model.ResyncAllEndSubdomainRequestV1;
-import com.j9soft.saas.alarms.model.ResyncAllStartSubdomainRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
