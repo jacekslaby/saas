@@ -19,6 +19,7 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
 
     private String domainName;
     private String adapterName;
+    private String entitySubdomainName;
 
     public static DaoRequestBuilderV1 newBuilder(String domainName, String adapterName) {
         return new DaoRequestBuilderV1(domainName, adapterName);
@@ -27,6 +28,7 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
     protected DaoRequestBuilderV1(String domainName, String adapterName) {
         this.domainName = domainName;
         this.adapterName = adapterName;
+        entitySubdomainName = domainName + "/" + adapterName;
     }
 
     @Override
@@ -76,8 +78,7 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
-                .setEntityDomainName(domainName)
-                .setEntitySubdomainName(adapterName)
+                .setEntitySubdomainName(entitySubdomainName)
                 .setEntityIdInSubdomain(createAlarmRequest.getAlarmDto().getNotificationIdentifier())
                 .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .setEntityAttributes(alarmAttributes)
@@ -99,8 +100,7 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
-                .setEntityDomainName(domainName)
-                .setEntitySubdomainName(adapterName)
+                .setEntitySubdomainName(entitySubdomainName)
                 .setEntityIdInSubdomain(deleteAlarmRequest.getAlarmDto().getNotificationIdentifier())
                 .setEventDate(eventTimeInstant.toInstant().toEpochMilli())  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
@@ -115,8 +115,7 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(entryDate)
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
-                .setEntityDomainName(domainName)
-                .setEntitySubdomainName(adapterName)
+                .setEntitySubdomainName(entitySubdomainName)
                 .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
     }
@@ -130,8 +129,7 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(entryDate)
                 .setEntityTypeName(Definitions.ALARM_ENTITY_TYPE_NAME)
-                .setEntityDomainName(domainName)
-                .setEntitySubdomainName(adapterName)
+                .setEntitySubdomainName(entitySubdomainName)
                 .setEventDate(entryDate)  // @TODO add event_date to REST request body ??  because DomainRequests does not have event_time field.
                 .build();
     }

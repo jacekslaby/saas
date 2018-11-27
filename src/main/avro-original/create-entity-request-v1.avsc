@@ -6,8 +6,7 @@
     {"name": "uuid", "type": "string", "doc": "UUID of this request"},
     {"name": "entry_date", "type": "long", "doc": "The date and time at which the request entered the system (i.e., was created). The value of this attribute is a number that represents the number of milliseconds since midnight, Jan. 1, 1970 (UTC)."},
     {"name": "entity_type_name", "type": "string", "doc": "Type name of the entity affected by this request. (e.g. 'SourceAlarm'"},
-    {"name": "entity_domain_name", "type": "string", "doc": "Name of a domain in which this entity exists. (e.g. 'Region ABC'"},
-    {"name": "entity_subdomain_name", "type": "string", "doc": "Name of a subdomain, unique within the domain, in which this entity exists. (e.g. 'AdapterEric2g-south'"},
+    {"name": "entity_subdomain_name", "type": "string", "doc": "Name of a subdomain in which this entity exists. (e.g. 'Region ABC/AdapterEric2g-south'"},
     {"name": "entity_id_in_subdomain", "type": "string", "doc": "Unique ID of the entity within the subdomain."}
   ]
 }

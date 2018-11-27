@@ -14,6 +14,14 @@ info:
     Every request has an optional `uuid` which may be used in Query API of Source Alarms repository.
     Every request concerning a single Alarm must provide property `notification_identifier`.
     
+    The execution order of requests is guaranteed only
+    within a partition (i.e. among alarms for the same Adapter)
+    and only for POSTs not executing in parallel. 
+    (I.e. in order to assure the sequence of your requests 
+    you cannot in parallel POST another request (for the same adapter)
+    until the previous one returned a response.)
+    (Note: requests for different adapters can be executed in parallel.)
+    
     Clients using this API must be ready for backward compatible changes in API like
      adding a not required property, adding a new request type, adding a new path, 
      adding a new HTTP method, adding a new enum value.
@@ -197,6 +205,7 @@ components:
       type: object
       properties:
         notification_identifier:
+          description: Unique identifier of the alarm within Domain.
           type: string
           example: "eric2g:south:34566"
         event_time:
@@ -286,7 +295,9 @@ components:
       schema:
         type: string
       required: true
-      description: The name of Domain where Adapter is located.
+      description: |
+        The name of Domain where Adapter is located.
+        Not allowed characters: / (slash) \ (backslash) , (comma)
       example: "all"
     adapterName:
       name: adapterName
@@ -294,7 +305,9 @@ components:
       schema:
         type: string
       required: true
-      description: The name of Adapter whose Alarms are concerned by the request.
+      description: |
+        The name of Adapter whose Alarms are concerned by the request.
+        Not allowed characters: / (slash) \ (backslash) , (comma)
       example: "AdapterEricsson2g-south"
       
   securitySchemes:
