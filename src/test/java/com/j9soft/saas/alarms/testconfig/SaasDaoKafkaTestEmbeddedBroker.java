@@ -67,7 +67,7 @@ public class SaasDaoKafkaTestEmbeddedBroker {
         Properties topicConfig = new Properties();
 
         adminZkClient.createTopic(topicName, partitions, replication,
-                topicConfig, RackAwareMode.Disabled$.MODULE$);   // @TODO topic compaction
+                topicConfig, RackAwareMode.Disabled$.MODULE$);
     }
 
     public void close() {
