@@ -72,6 +72,9 @@ public class SaasPublisherKafka implements SaasPublisher {
         //   a smart client code (which did not mix same entityId in the array) would be able to retry just those with exceptions.
         //  (however - does it make sense ? Kafka will provide own retries (TODO configure it),
         //    so what is the purpose for a client to try again on its own ? Hm... maybe in 1h kafka will be up again ?)
+        //   On the other hand a client (i.e. and Adapter) may be happy that at least some alarms were saved
+        //    (e.g. when only one partition is not available) and resynchronized. And it would be user's responsibility
+        //    to trigger manual resync later. (anyway they launch resync at the beginning of every shift.)
 
         for (RequestDto requestDto: requestsArray) {
             requestDto.saveInDao(requestDaoKafka, publishTask.createCallback());
