@@ -1,6 +1,5 @@
 package com.j9soft.saas.alarms.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.j9soft.saas.alarms.dao.DaoRequestBuilderV1;
 import com.j9soft.saas.alarms.model.RequestDto;
 import com.j9soft.saas.alarms.model.RequestsListDto;
@@ -19,16 +18,10 @@ public class SaasV1Service {
     //
     private final SaasPublisher saasPublisher;
 
-    private ObjectMapper mapper;
-
     @Autowired
     public SaasV1Service(SaasPublisher saasPublisher) {
 
         this.saasPublisher = saasPublisher;
-
-        // For performance reasons we should share ObjectMapper instance.
-        // ( https://stackoverflow.com/questions/3907929/should-i-declare-jacksons-objectmapper-as-a-static-field )
-        mapper = new ObjectMapper();
     }
 
     public RequestCreatedResponse createRequest(String domainName, String adapterName, RequestDto requestDto) {
