@@ -2,8 +2,8 @@ package com.j9soft.saas.alarms;
 
 import com.j9soft.saas.alarms.model.RequestDto;
 import com.j9soft.saas.alarms.model.RequestsListDto;
-import org.openapitools.client.model.MultiStatusResponse;
-import org.openapitools.client.model.RequestCreatedResponse;
+import org.openapitools.model.MultiStatusResponse;
+import org.openapitools.model.RequestCreatedResponse;
 
 /**
  * Interface defining functionality provided by API (version 1) of Source Active Alarms Store.

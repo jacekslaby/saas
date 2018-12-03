@@ -4,8 +4,8 @@ import com.j9soft.saas.alarms.SaasV1;
 import com.j9soft.saas.alarms.model.RequestDto;
 import com.j9soft.saas.alarms.model.RequestsListDto;
 import com.j9soft.saas.alarms.service.SaasV1Service;
-import org.openapitools.client.model.MultiStatusResponse;
-import org.openapitools.client.model.RequestCreatedResponse;
+import org.openapitools.model.MultiStatusResponse;
+import org.openapitools.model.RequestCreatedResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
+import javax.validation.Valid;
 
 /**
  * Servlet based implementation of Command API (v.1) of Source Active Alarms Store.
@@ -46,12 +47,13 @@ public class SaasV1Controller implements SaasV1 {
     @PostMapping("/v1/domains/{domainName}/adapters/{adapterName}/request")
     public RequestCreatedResponse createRequest(@PathVariable("domainName") String domainName,
                                                 @PathVariable("adapterName") String adapterName,
-                                                @RequestBody RequestDto requestDto) {
+                                                @Valid @RequestBody RequestDto requestDto) {
 
-        logger.info("createRequest(domainName='{}', adapterName='{}') - requestDto:'{}'",
+        logger.info("createRequest(domainName='{}', adapterName='{}') - requestDto:\n{}",
                 domainName, adapterName, requestDto);
 
-        return saasService.createRequest(domainName, adapterName, requestDto);
+        //return saasService.createRequest(domainName, adapterName, requestDto);
+        return null;
 
         // https://www.baeldung.com/spring-request-response-body
         //  "Remember, we don’t need to annotate the @RestController-annotated controllers with the @ResponseBody annotation
@@ -60,12 +62,12 @@ public class SaasV1Controller implements SaasV1 {
 
 
     @Override
-    @PostMapping("/v1/domains/{domainName}/adapters/{adapterName}/request")
+    @PostMapping("/v1/domains/{domainName}/adapters/{adapterName}/request/createWithList")
     public MultiStatusResponse createRequestsWithList(@PathVariable("domainName") String domainName,
                                                       @PathVariable("adapterName") String adapterName,
-                                                      @RequestBody RequestsListDto requestsListDto) {
+                                                      @Valid @RequestBody RequestsListDto requestsListDto) {
 
-        logger.info("createRequestsWithList(domainName='{}', adapterName='{}') - requestsListDto:'{}'",
+        logger.info("createRequestsWithList(domainName='{}', adapterName='{}') - requestsListDto:\n{}",
                 domainName, adapterName, requestsListDto);
 
         return saasService.createRequestsWithList(domainName, adapterName, requestsListDto);

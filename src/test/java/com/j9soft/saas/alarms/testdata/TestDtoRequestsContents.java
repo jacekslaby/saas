@@ -1,6 +1,6 @@
 package com.j9soft.saas.alarms.testdata;
 
-import org.openapitools.client.model.*;
+import org.openapitools.model.*;
 
 import java.time.OffsetDateTime;
 

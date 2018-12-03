@@ -20,4 +20,12 @@ public class ResyncAllAlarmsEndRequestDto extends RequestDto {
 
         krepositoryCommand = daoRequestBuilder.buildResyncAllEnd();
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("class ResyncAllAlarmsEndRequestDto {\n");
+        sb.append("}");
+        return sb.toString();
+    }
 }

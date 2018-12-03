@@ -1,39 +1,35 @@
 package com.j9soft.saas.alarms.service;
 
-import com.j9soft.saas.alarms.dao.RequestDaoKafka;
+import com.j9soft.saas.alarms.dao.RequestDao;
 import com.j9soft.saas.alarms.model.RequestDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 /**
- * Implementation of publisher layer based on a Kafka DAO.
- *
- * This publisher Service is used in production mode, i.e. in production environments.
+ * Implementation of publisher layer.
  */
-@Profile({"prod","kafka-dev"})
 @Service
 public class SaasPublisherKafka implements SaasPublisher {
 
     private static final Logger logger = LoggerFactory.getLogger(SaasPublisherKafka.class);
 
-    private RequestDaoKafka requestDaoKafka;
+    private RequestDao requestDao;
 
     /**
      * Note: Autowire - The idea is that it is possible to create a new class annotated as @Configuration
      *  and this class will get autowired here. (btw: In this class it is important to remember about a destroy method to close a producer.)
      */
     @Autowired
-    public SaasPublisherKafka(RequestDaoKafka requestDaoKafka) {
+    public SaasPublisherKafka(RequestDao requestDao) {
 
-        this.requestDaoKafka = requestDaoKafka;
+        this.requestDao = requestDao;
     }
 
     @Override
     public void publishRequest(PublishTask publishTask, RequestDto requestDto) {
-        requestDto.saveInDao(requestDaoKafka, publishTask.createCallback());
+        requestDto.saveInDao(requestDao, publishTask.createCallback());
     }
 
     @Override
@@ -77,7 +73,7 @@ public class SaasPublisherKafka implements SaasPublisher {
         //    to trigger manual resync later. (anyway they launch resync at the beginning of every shift.)
 
         for (RequestDto requestDto: requestsArray) {
-            requestDto.saveInDao(requestDaoKafka, publishTask.createCallback());
+            requestDto.saveInDao(requestDao, publishTask.createCallback());
         }
     }
 

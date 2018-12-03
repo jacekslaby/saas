@@ -5,8 +5,8 @@ import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1;
 import com.j9soft.saas.alarms.model.Definitions;
-import org.openapitools.client.model.CreateAlarmRequest;
-import org.openapitools.client.model.DeleteAlarmRequest;
+import org.openapitools.model.CreateAlarmRequest;
+import org.openapitools.model.DeleteAlarmRequest;
 
 import java.time.OffsetDateTime;
 import java.util.HashMap;
@@ -35,7 +35,9 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
     public CreateEntityRequestV1 buildCreateEntityRequest(CreateAlarmRequest createAlarmRequest) {
 
         // https://stackoverflow.com/questions/6038136/how-do-i-parse-rfc-3339-datetimes-with-java#6038922
-        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(createAlarmRequest.getAlarmDto().getEventTime());
+        OffsetDateTime eventTimeInstant = OffsetDateTime.parse(createAlarmRequest
+                .getAlarmDto()
+                .getEventTime());
 
         if (createAlarmRequest.getAlarmDto().getPerceivedSeverity() < 0) {
             throw new RuntimeException("@TODO: better exception handling");

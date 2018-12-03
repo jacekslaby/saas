@@ -205,7 +205,7 @@
       </plugin>
 
       <!-- Let's generate helper classes for our model. From OpenAPI yaml.
-           These classes are used only in tests. They are used to generate JSON test strings. -->
+           These classes are used to deserialize JSON body objects received by REST controller. -->
       <plugin>
         <groupId>org.openapitools</groupId>
         <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -217,7 +217,7 @@
             </goals>
             <configuration>
               <inputSpec>${project.basedir}/src/doc/openapi.yaml</inputSpec>
-              <generatorName>java</generatorName>
+              <generatorName>spring</generatorName>   <!-- We need annotations from JSR 303 Bean Validation. See https://lmonkiewicz.com/programming/get-noticed-2017/spring-boot-rest-request-validation/ -->
               <generateApis>false</generateApis>
               <generateModelTests>false</generateModelTests>
               <generateModelDocumentation>false</generateModelDocumentation>

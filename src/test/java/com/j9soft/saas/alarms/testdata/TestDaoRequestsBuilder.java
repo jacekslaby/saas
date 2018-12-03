@@ -5,8 +5,8 @@ import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1;
 import com.j9soft.saas.alarms.dao.DaoRequestBuilderV1;
-import org.openapitools.client.model.CreateAlarmRequest;
-import org.openapitools.client.model.DeleteAlarmRequest;
+import org.openapitools.model.CreateAlarmRequest;
+import org.openapitools.model.DeleteAlarmRequest;
 
 /**
  * For test purposes this builder additionally gathers created all DAO requests.

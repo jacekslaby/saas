@@ -4,8 +4,8 @@ import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1;
-import org.openapitools.client.model.CreateAlarmRequest;
-import org.openapitools.client.model.DeleteAlarmRequest;
+import org.openapitools.model.CreateAlarmRequest;
+import org.openapitools.model.DeleteAlarmRequest;
 
 /**
  * Interface implemented by objects which know how to convert a request from the OpenAPI model (e.g. a CreateAlarm)

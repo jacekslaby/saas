@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.j9soft.saas.alarms.dao.DaoRequestBuilderV1;
 import com.j9soft.saas.alarms.model.RequestDto;
 import com.j9soft.saas.alarms.model.RequestsListDto;
-import org.openapitools.client.model.MultiStatusResponse;
-import org.openapitools.client.model.RequestCreatedResponse;
-import org.openapitools.client.model.RequestCreationResult;
+import org.openapitools.model.MultiStatusResponse;
+import org.openapitools.model.RequestCreatedResponse;
+import org.openapitools.model.RequestCreationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
