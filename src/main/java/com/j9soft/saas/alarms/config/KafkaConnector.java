@@ -8,12 +8,12 @@ import org.apache.kafka.clients.producer.KafkaProducer;
  */
 public abstract class KafkaConnector {
 
-    private static final String TOPIC_NAME__SA_REQUESTS = "tc_sa_requests";
+    private static final String TOPIC_NAME__COMMANDS = "v1-commands-topic";
 
     public abstract KafkaProducer<String, Object> getProducer();
 
     public String getTopicName() {
-        return TOPIC_NAME__SA_REQUESTS;
+        return TOPIC_NAME__COMMANDS;
     }
 
     public abstract void close();

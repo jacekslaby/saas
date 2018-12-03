@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   description: |
-    This is Command API for Source Alarms repository. ('C' from 'CQRS')
+    This is Command API v.1 for Source Alarms repository. ('C' from 'CQRS')
     
     It accepts requests modyfining Alarms stored in Source Alarms repository.
     
@@ -39,7 +39,7 @@ servers:
   - url: https://sar.j9soft.com/v1
   
 paths:
-  /domains/{domainName}/adapters/{adapterName}/request:
+  /v1/domains/{domainName}/adapters/{adapterName}/request:
     post:
       summary: Add a new request to the repository
       operationId: addRequest
@@ -72,7 +72,7 @@ paths:
           description: |
             Unexpected error. The request could not have been created. Please re-try later.
 
-  /domains/{domainName}/adapters/{adapterName}/request/createWithList:
+  /v1/domains/{domainName}/adapters/{adapterName}/request/createWithList:
     post:
       summary: Add new requests to the repository
       operationId: addRequests
