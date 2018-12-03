@@ -1,5 +1,7 @@
 package com.j9soft.saas.alarms.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -13,16 +15,19 @@ import javax.validation.constraints.NotNull;
  */
 public class RequestsListDto {
 
+    // Note: Name of field on purpose is not according to Java coding conventions.
+    //   Reason is that this name appears in REST response and we want it to match the name defined in OpenAPI spec.
     @NotNull
-    @Valid
-    private RequestDto[] requests;
+    @Valid   // See also: https://lmonkiewicz.com/programming/get-noticed-2017/spring-boot-rest-request-validation/
+    @JsonProperty("requests_array")
+    private RequestDto[] requests_array;
 
     public RequestDto[] getRequests() {
-        return requests;
+        return requests_array;
     }
 
     public void setRequests(RequestDto[] requests) {
-        this.requests = requests;
+        this.requests_array = requests;
     }
 
     @Override
@@ -30,7 +35,7 @@ public class RequestsListDto {
         StringBuilder sb = new StringBuilder();
         sb.append("class RequestsListDto {\n");
 
-        sb.append("    requests: ").append(toIndentedString(requests)).append("\n");
+        sb.append("    requests: ").append(toIndentedString(requests_array)).append("\n");
         sb.append("}");
         return sb.toString();
     }
@@ -49,7 +54,7 @@ public class RequestsListDto {
         for (int i = 0; i < requests.length - 1; i++) {
             sb.append(toIndentedString(requests[i])).append(",\n");
         }
-        sb.append(toIndentedString(requests[requests.length])).append("\n");
+        sb.append(toIndentedString(requests[requests.length - 1])).append("\n");  // last one is without a comma character
         sb.append("]");
         return sb.toString();
     }

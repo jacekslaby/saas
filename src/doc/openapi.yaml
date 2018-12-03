@@ -54,9 +54,10 @@ paths:
             example:
               request_type: CreateAlarmRequest
               request_content:
-                notification_identifier: "eric2g:south:34566"
-                event_time: "2018-10-19T13:44:56.334+02:00"
-                perceived_severity: 1
+                alarm_dto:
+                  notification_identifier: "eric2g:south:34566"
+                  event_time: "2018-10-19T13:44:56.334+02:00"
+                  perceived_severity: 1
       responses:
         '200':
           description: "successful operation"
@@ -85,13 +86,15 @@ paths:
             schema:
               $ref: '#/components/schemas/RequestsList'
             example:
-              - request_type: ResyncAllAlarmsStartRequest
-                request_content: {}
-              - request_type: CreateAlarmRequest
-                request_content:
-                  notification_identifier: "eric2g:south:34566"
-              - request_type: ResyncAllAlarmsEndRequest
-                request_content: {}
+              requests_array:
+                - request_type: ResyncAllAlarmsStartRequest
+                - request_type: CreateAlarmRequest
+                  request_content:
+                    alarm_dto:
+                      notification_identifier: "eric2g:south:34566"
+                      event_time: "2018-10-19T13:44:56.334+02:00"
+                      perceived_severity: 1
+                - request_type: ResyncAllAlarmsEndRequest
       responses:
         '200':
           description: |
@@ -118,9 +121,14 @@ paths:
 components:
   schemas:
     RequestsList:
-      type: array
-      items:
-        $ref: '#/components/schemas/Request'
+      type: object
+      properties:
+        requests_array:
+          type: array
+          items:
+            $ref: '#/components/schemas/Request'
+      required:
+        - requests_array
     Request:
       type: object
       properties:
@@ -130,8 +138,9 @@ components:
           description: |
             Value of this property is a kind of a discriminator,
             i.e. defines what is included in property `request_content`.
-            For example if `request_type=ResyncAllAlarmsEndRequest` then `request_content` must contain 
-             an object of `ResyncAllAlarmsEndRequest` schema.
+            For example if `request_type=CreateAlarmRequest` then `request_content` must contain 
+             an object of `CreateAlarmRequest` schema. (Note: There are request types
+            which must not have `request_content` property, e.g. `ResyncAllAlarmsEndRequest`.)
         request_content:
           oneOf:
             - $ref: '#/components/schemas/CreateAlarmRequest'
@@ -142,8 +151,7 @@ components:
             - $ref: '#/components/schemas/ResyncAllAlarmsStartRequest'
       required: 
         - request_type
-        - request_content
-        
+
     ResyncAllAlarmsEndRequest:
       description: |
         `ResyncAllAlarmsEndRequest` indicates end of resynchronization.
