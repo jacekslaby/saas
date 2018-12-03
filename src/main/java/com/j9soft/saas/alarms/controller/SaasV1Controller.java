@@ -52,8 +52,7 @@ public class SaasV1Controller implements SaasV1 {
         logger.info("createRequest(domainName='{}', adapterName='{}') - requestDto:\n{}",
                 domainName, adapterName, requestDto);
 
-        //return saasService.createRequest(domainName, adapterName, requestDto);
-        return null;
+        return saasService.createRequest(domainName, adapterName, requestDto);
 
         // https://www.baeldung.com/spring-request-response-body
         //  "Remember, we don’t need to annotate the @RestController-annotated controllers with the @ResponseBody annotation
