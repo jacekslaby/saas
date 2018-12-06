@@ -22,6 +22,11 @@ public class ResyncAllAlarmsEndRequestDto extends RequestDto {
     }
 
     @Override
+    public CharSequence getDaoRequestUuid() {
+        return krepositoryCommand.getUuid();
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("class ResyncAllAlarmsEndRequestDto {\n");

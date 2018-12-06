@@ -29,11 +29,15 @@ public class SaasPublisherKafka implements SaasPublisher {
 
     @Override
     public void publishRequest(PublishTask publishTask, RequestDto requestDto) {
+        logger.info("RequestUuid:{} - publishRequest", requestDto.getDaoRequestUuid());
+
         requestDto.saveInDao(requestDao, publishTask.createCallback());
     }
 
     @Override
     public void publishRequestsWithArray(PublishTask publishTask, RequestDto[] requestsArray) {
+
+        logger.info("publishRequestsWithArray(requestsArray.length={})", requestsArray.length);
 
         // Note: In case when our Publisher publishes more than one request (i.e. publishRequestsWithArray() )
         //  it is quite likely that they are send to different partitions. (because our topic is partitioned by hash of request.uuid)

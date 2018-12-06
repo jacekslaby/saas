@@ -73,6 +73,8 @@ public class PublishTask {
     public Exception[] getResults() throws InterruptedException {
         lock.lock();
         try {
+            // @TODO add timeout
+
             while (numberOfcompletedRequests < results.size()) {
                 resultsAreReady.await();
             }

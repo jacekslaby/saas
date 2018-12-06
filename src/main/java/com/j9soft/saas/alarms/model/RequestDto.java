@@ -55,4 +55,8 @@ public abstract class RequestDto {
      */
     public abstract void saveInDao(RequestDao requestDao, RequestDao.Callback callback);
 
+    /**
+     * Get UUID of the own DAO request. (available after #buildDaoRequest() was called)
+     */
+    public abstract CharSequence getDaoRequestUuid();
 }

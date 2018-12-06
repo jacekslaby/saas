@@ -32,6 +32,11 @@ public class CreateAlarmRequestDto extends RequestDto {
         krepositoryCommand = daoRequestBuilder.buildCreateEntityRequest(this.requestContent);
     }
 
+    @Override
+    public CharSequence getDaoRequestUuid() {
+        return krepositoryCommand.getUuid();
+    }
+
     public void setRequestContent(CreateAlarmRequest requestContent) {
         this.requestContent = requestContent;
     }

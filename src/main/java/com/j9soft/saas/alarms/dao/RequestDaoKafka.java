@@ -7,6 +7,8 @@ import com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1;
 import com.j9soft.saas.alarms.config.KafkaConnector;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class RequestDaoKafka implements RequestDao {
 
+    private static final Logger logger = LoggerFactory.getLogger(RequestDaoKafka.class);
+
     private String topicName;
     private KafkaProducer<String, Object> producer;
 
@@ -44,6 +48,8 @@ public class RequestDaoKafka implements RequestDao {
 
     @Override
     public void saveNewRequest(CreateEntityRequestV1 request, RequestDao.Callback callback) {
+
+        logger.info("RequestUuid:{} - saveNewRequest(CreateEntityRequestV1)", request.getUuid());
 
         // @TODO think over the idea of partitioning by uuid    (because most likely all requests from an array are from one subdomain,
         //   so it makes little sense to commit to several partitions which is probably more costly as they may reside on different kafka brokers)
@@ -72,18 +78,24 @@ public class RequestDaoKafka implements RequestDao {
 
     @Override
     public void saveNewRequest(DeleteEntityRequestV1 request, RequestDao.Callback callback) {
+        logger.info("RequestUuid:{} - saveNewRequest(DeleteEntityRequestV1)", request.getUuid());
+
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record, (recordMetadata, e) -> callback.onCompletion(e));
     }
 
     @Override
     public void saveNewRequest(ResyncAllStartSubdomainRequestV1 request, RequestDao.Callback callback) {
+        logger.info("RequestUuid:{} - saveNewRequest(ResyncAllStartSubdomainRequestV1)", request.getUuid());
+
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record, (recordMetadata, e) -> callback.onCompletion(e));
     }
 
     @Override
     public void saveNewRequest(ResyncAllEndSubdomainRequestV1 request, RequestDao.Callback callback) {
+        logger.info("RequestUuid:{} - saveNewRequest(ResyncAllEndSubdomainRequestV1)", request.getUuid());
+
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record, (recordMetadata, e) -> callback.onCompletion(e));
     }

@@ -6,11 +6,15 @@ import com.j9soft.saas.alarms.model.RequestsListDto;
 import org.openapitools.model.MultiStatusResponse;
 import org.openapitools.model.RequestCreatedResponse;
 import org.openapitools.model.RequestCreationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SaasV1Service {
+
+    private static final Logger logger = LoggerFactory.getLogger(SaasV1Service.class);
 
     // @Autowired  - is not used because:
     // https://spring.io/blog/2016/04/15/testing-improvements-in-spring-boot-1-4
@@ -29,6 +33,15 @@ public class SaasV1Service {
         // Prepare a DAO layer request.
         DaoRequestBuilderV1 builder = DaoRequestBuilderV1.newBuilder(domainName, adapterName);
         requestDto.buildDaoRequest(builder);
+
+        if (logger.isInfoEnabled()) {
+            // We need entire JSON to be able to easily associate content to UUID in log output,
+            //  however we do not want JSON to be in new lines, so we remove newline characters.
+            //
+            String requestDtoAsString = requestDto.toString().replace("\n", "");
+            logger.info("RequestUuid:{} - createRequest(domainName='{}', adapterName='{}') - requestDto:{}",
+                    requestDto.getDaoRequestUuid(), domainName, adapterName, requestDtoAsString);
+        }
 
         // Publish, i.e. save the request.
         PublishTask publishTask = saasPublisher.createNewTask();
@@ -50,6 +63,9 @@ public class SaasV1Service {
             // RequestDto was created successfully in Dao.
             RequestCreatedResponse requestCreatedResponse = new RequestCreatedResponse();
             // @TODO return UUID requestCreatedResponse.setUuid(request. wrappedRequest.getUUID() );
+
+            logger.info("RequestUuid:{} - createRequest - success", requestDto.getDaoRequestUuid());
+
             return requestCreatedResponse;
         } else {
             // Something went wrong. We need to return '500' HTTP status code.
@@ -58,6 +74,15 @@ public class SaasV1Service {
     }
 
     public MultiStatusResponse createRequestsWithList(String domainName, String adapterName, RequestsListDto requestsListDto) {
+
+        if (logger.isInfoEnabled()) {
+            // We need entire JSON to be able to easily associate content to UUID in log output,
+            //  however we do not want JSON to be in new lines, so we remove newline characters.
+            //
+            String requestsListDtoAsString = requestsListDto.toString().replace("\n", "");
+            logger.info("createRequestsWithList(domainName='{}', adapterName='{}') - requestsListDto:\n{}",
+                    domainName, adapterName, requestsListDtoAsString);
+        }
 
         // Prepare DAO layer requests.
         DaoRequestBuilderV1 builder = DaoRequestBuilderV1.newBuilder(domainName, adapterName);
@@ -93,6 +118,9 @@ public class SaasV1Service {
                 //@TODO add UUID to returned RequestResult
             }
         }
+
+        logger.info("createRequestsWithList - success");
+
         return response;
     }
 }

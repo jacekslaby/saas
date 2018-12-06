@@ -31,6 +31,11 @@ public class DeleteAlarmRequestDto extends RequestDto {
         krepositoryCommand = daoRequestBuilder.buildDeleteEntityRequest(this.requestContent);
     }
 
+    @Override
+    public CharSequence getDaoRequestUuid() {
+        return krepositoryCommand.getUuid();
+    }
+
     public void setRequestContent(DeleteAlarmRequest requestContent) {
         this.requestContent = requestContent;
     }

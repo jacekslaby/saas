@@ -56,7 +56,7 @@ public class RequestsListDto {
         }
         sb.append(toIndentedString(requests[requests.length - 1])).append("\n");  // last one is without a comma character
         sb.append("]");
-        return sb.toString();
+        return sb.toString().replace("\n", "\n    ");
     }
 
     /**
@@ -65,8 +65,8 @@ public class RequestsListDto {
      */
     private String toIndentedString(java.lang.Object o) {
         if (o == null) {
-            return "null";
+            return "    null";
         }
-        return o.toString().replace("\n", "\n    ");
+        return "    " + o.toString().replace("\n", "\n    ");
     }
 }
