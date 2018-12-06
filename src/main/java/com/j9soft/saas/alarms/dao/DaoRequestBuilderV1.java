@@ -47,7 +47,11 @@ public class DaoRequestBuilderV1 implements DaoRequestBuilder {
         //
         Map<CharSequence, CharSequence> alarmAttributes = new HashMap<>();
         // - Add additional Alarm attributes to a HashMap.
-        alarmAttributes.putAll(createAlarmRequest.getAlarmDto().getAdditionalProperties());
+        //Map<String, String> additionalProperties =
+        final Map<String, String> additionalProperties = createAlarmRequest.getAlarmDto().getAdditionalProperties();
+        if (additionalProperties != null) { // additional Alarm attributes are optional, so it can be null
+            alarmAttributes.putAll(additionalProperties);
+        }
         // - Add required attributes to the same HashMap.
         alarmAttributes.put(ALARM_ATTRIBUTE_NAME__EVENT_TIME, createAlarmRequest.getAlarmDto().getEventTime());
         alarmAttributes.put(ALARM_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER,

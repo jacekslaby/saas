@@ -11,10 +11,15 @@ public class TestDtoRequestsContents {
     private static final String ALARM_NOID = "eric2g:341";
 
     private CreateAlarmRequest createAlarmRequest;
+    private CreateAlarmRequest createEmptyAlarmRequest;
     private DeleteAlarmRequest deleteAlarmRequest;
 
     public CreateAlarmRequest getCreateAlarmRequest() {
         return createAlarmRequest;
+    }
+
+    public CreateAlarmRequest getCreateEmptyAlarmRequest() {
+        return createEmptyAlarmRequest;
     }
 
     public DeleteAlarmRequest getDeleteAlarmRequest() {
@@ -39,6 +44,14 @@ public class TestDtoRequestsContents {
                 .additionalProperties(alarmDTOAdditionalPropertiesForApi);
         result.createAlarmRequest = new CreateAlarmRequest()
                 .alarmDto(alarmDto);
+
+        // Let's create empty CreateAlarmRequest, i.e. without any additional properties.
+        AlarmDTO secondAlarmDto = new AlarmDTO()
+                .notificationIdentifier(ALARM_NOID)
+                .eventTime(eventTimeString)
+                .perceivedSeverity(1);
+        result.createEmptyAlarmRequest = new CreateAlarmRequest()
+                .alarmDto(secondAlarmDto);
 
         // Let's create DeleteAlarmRequest.
         DeletedAlarmDTO deletedAlarmDto = new DeletedAlarmDTO()

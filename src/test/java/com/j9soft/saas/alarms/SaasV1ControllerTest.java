@@ -114,6 +114,16 @@ public class SaasV1ControllerTest {
                 testDtoRequests.getResyncAllAlarmsEndRequestDto()} );
     }
 
+    @Test
+    public void t5_whenPostedCreateAlarmRequestWithEmptyAlarm_itIsSavedToDao() {
+
+        // Let's prepare empty requests
+        testDtoRequests = TestDtoRequests.newBuilderWithEmptyOptionalAttributes(builder);
+        checker.addCreateEntityRequest( builder.getCreateEntityRequest() );
+
+        postAndVerifyRequest( testDtoRequests.getCreateAlarmRequestDto() );
+    }
+
     private void postAndVerifyRequestsWithArray(RequestDto[] requestDtoArray) {
 
         // Let's stub results to be received by SaasV1Service.

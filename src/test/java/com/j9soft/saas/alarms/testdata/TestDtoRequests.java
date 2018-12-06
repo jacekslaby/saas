@@ -37,6 +37,18 @@ public class TestDtoRequests {
         return result;
     }
 
+    /**
+     * Returned instance provides requests with optional properties not provided, i.e. empty.
+     */
+    public static TestDtoRequests newBuilderWithEmptyOptionalAttributes(DaoRequestBuilder builder) {
+        TestDtoRequests result = newBuilder(builder);
+
+        result.createAlarmRequestDto.setRequestContent(result.dtoRequestsContents.getCreateEmptyAlarmRequest());
+        result.createAlarmRequestDto.buildDaoRequest(builder);
+
+        return result;
+    }
+
     public CreateAlarmRequestDto getCreateAlarmRequestDto() {
         return createAlarmRequestDto;
     }
