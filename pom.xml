@@ -220,6 +220,7 @@
             </goals>
             <configuration>
               <inputSpec>${project.basedir}/src/doc/openapi.yaml</inputSpec>
+              <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
               <generatorName>spring</generatorName>   <!-- We need annotations from JSR 303 Bean Validation. See https://lmonkiewicz.com/programming/get-noticed-2017/spring-boot-rest-request-validation/ -->
               <generateApis>false</generateApis>
               <generateModelTests>false</generateModelTests>
@@ -245,7 +246,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <openapi-generator-version>3.3.1</openapi-generator-version>
+    <openapi-generator-version>3.3.4</openapi-generator-version>
   </properties>
 
 </project>

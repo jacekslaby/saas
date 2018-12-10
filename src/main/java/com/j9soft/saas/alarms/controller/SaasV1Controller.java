@@ -4,7 +4,7 @@ import com.j9soft.saas.alarms.SaasV1;
 import com.j9soft.saas.alarms.model.RequestDto;
 import com.j9soft.saas.alarms.model.RequestsListDto;
 import com.j9soft.saas.alarms.service.SaasV1Service;
-import org.openapitools.model.MultiStatusResponse;
+import org.openapitools.model.MultiResultResponse;
 import org.openapitools.model.RequestCreatedResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +62,7 @@ public class SaasV1Controller implements SaasV1 {
 
     @Override
     @PostMapping("/v1/domains/{domainName}/adapters/{adapterName}/request/createWithList")
-    public MultiStatusResponse createRequestsWithList(@PathVariable("domainName") String domainName,
+    public MultiResultResponse createRequestsWithList(@PathVariable("domainName") String domainName,
                                                       @PathVariable("adapterName") String adapterName,
                                                       @Valid @RequestBody RequestsListDto requestsListDto) {
 

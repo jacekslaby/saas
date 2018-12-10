@@ -3,7 +3,7 @@ package com.j9soft.saas.alarms.service;
 import com.j9soft.saas.alarms.dao.DaoRequestBuilderV1;
 import com.j9soft.saas.alarms.model.RequestDto;
 import com.j9soft.saas.alarms.model.RequestsListDto;
-import org.openapitools.model.MultiStatusResponse;
+import org.openapitools.model.MultiResultResponse;
 import org.openapitools.model.RequestCreatedResponse;
 import org.openapitools.model.RequestCreationResult;
 import org.slf4j.Logger;
@@ -73,7 +73,7 @@ public class SaasV1Service {
         }
     }
 
-    public MultiStatusResponse createRequestsWithList(String domainName, String adapterName, RequestsListDto requestsListDto) {
+    public MultiResultResponse createRequestsWithList(String domainName, String adapterName, RequestsListDto requestsListDto) {
 
         if (logger.isInfoEnabled()) {
             // We need entire JSON to be able to easily associate content to UUID in log output,
@@ -107,7 +107,7 @@ public class SaasV1Service {
         }
 
         // Build response.
-        MultiStatusResponse response = new MultiStatusResponse();
+        MultiResultResponse response = new MultiResultResponse();
         RequestCreationResult[] requestResults = new RequestCreationResult[results.length];
         for (int i = 0; i < results.length; i++) {
             requestResults[i] = new RequestCreationResult();

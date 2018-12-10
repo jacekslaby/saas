@@ -102,14 +102,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MultiStatusResponse'
+                $ref: '#/components/schemas/MultiResultResponse'
         '207':
           description: |
             Partially successful operation. Nested array of status codes (200 or 500) indicates which request was created.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MultiStatusResponse'
+                $ref: '#/components/schemas/MultiResultResponse'
         '403':
           description: |
             Provided access token (in Header 'Authentication: Bearer ...') 
@@ -265,17 +265,23 @@ components:
           example: "123e4567-e89b-12d3-a456-426655440000"
           description: |
             It contains UUID of the created request.
-    MultiStatusResponse:
-      type: array
-      items:
-        $ref: '#/components/schemas/RequestCreationResult'
+    MultiResultResponse:
+      type: object
+      properties:
+        results_array:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestCreationResult'
+      required:
+        - results_array
       example: 
-        - status: 200
-          uuid: "123e4567-e89b-12d3-a456-426655440000"
-        - status: 200
-          uuid: "223e4567-e89b-12d3-a456-426655440001"
-        - status: 200
-          uuid: "323e4567-e89b-12d3-a456-426655440002"
+        results_array:
+          - status: 200
+            uuid: "123e4567-e89b-12d3-a456-426655440000"
+          - status: 200
+            uuid: "223e4567-e89b-12d3-a456-426655440001"
+          - status: 200
+            uuid: "323e4567-e89b-12d3-a456-426655440002"
     RequestCreationResult:
       type: object
       properties:

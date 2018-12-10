@@ -3,6 +3,8 @@ package com.j9soft.saas.alarms.testdata;
 import org.openapitools.model.*;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Pool of contents of DTO requests used in unit tests.
@@ -34,7 +36,7 @@ public class TestDtoRequestsContents {
         long eventTime = OffsetDateTime.parse(eventTimeString).toInstant().toEpochMilli();
 
         // Let's create CreateAlarmRequest.
-        AlarmDTOAdditionalProperties alarmDTOAdditionalPropertiesForApi = new AlarmDTOAdditionalProperties();
+        Map<String, String> alarmDTOAdditionalPropertiesForApi = new HashMap<>();
         alarmDTOAdditionalPropertiesForApi.put("additional_text", "Detailed information");
         alarmDTOAdditionalPropertiesForApi.put("managed_object_instance", "BTS:333");
         AlarmDTO alarmDto = new AlarmDTO()
