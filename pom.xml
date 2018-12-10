@@ -232,6 +232,13 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- https://maven.apache.org/surefire/maven-failsafe-plugin/plugin-info.html -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.0.0-M1</version>
+      </plugin>
     </plugins>
     
   </build>

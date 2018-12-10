@@ -21,12 +21,12 @@ import static org.mockito.ArgumentMatchers.isNull;
  * when a method of RequestDaoKafka is invoked.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class RequestDaoKafkaTest {
+public class RequestDaoKafkaIT {
 
     private static SaasDaoKafkaTestEmbeddedBroker embeddedBroker;
     private static SaasDaoKafkaTestConfiguration testConfig;
 
-    protected RequestDaoKafka kafkaDao;
+    private RequestDaoKafka kafkaDao;
     private RequestDao.Callback callbackMock;
     private TestDaoRequestsBuilder builder;
     private TestDtoRequests testDtoRequests;
