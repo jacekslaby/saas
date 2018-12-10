@@ -1,6 +1,9 @@
 # Saas REST proxy (PoC)
 
-Saas REST proxy provides you the Command API ('C' from 'CQRS') for Source Active Alarms Store. 
+The Saas REST Proxy provides a RESTful interface to a Source Active Alarms Store,
+making it easy to produce Source Alarms without using the native Kafka protocol or clients.
+
+It provides the Command API ('C' from 'CQRS') for Source Active Alarms Store.
 The API is described in [OpenAPI spec](/jacekslaby/saas/src/doc/openapi.yaml) format.
 
 ## Getting Started
@@ -15,7 +18,7 @@ mvn clean test
 
 Open [Swagger Editor](https://editor.swagger.io/) and paste contents of [OpenAPI spec](/jacekslaby/saas/src/doc/openapi.yaml).
 
-## Test run without connecting to Kafka broker 
+## Test run without connecting to Kafka broker
 (i.e. with commands directed to nowhere)
 ```
 mvn exec:java            (or: mvn spring-boot:run)
@@ -49,7 +52,7 @@ bin/kafka-server-start.sh config/server.properties &
 2. Then you may start the service and send some requests.
 ```
 mvn spring-boot:run -Dspring-boot.run.profiles=kafka-dev -Dspring-boot.run.jvmArguments="-Dkafka-host=192.168.33.10 -Dkafka-port=9092"
-(alternative: java -jar -Dspring.profiles.active=kafka-dev -Dkafka-host=192.168.33.10 -Dkafka-port=9092   target\saas-1.0-SNAPSHOT.jar)
+(alternative: java -jar -Dspring.profiles.active=kafka-dev -Dkafka-host=192.168.33.10 -Dkafka-port=9092   target\saas-rest-1.0-SNAPSHOT.jar)
 
 curl -X POST http://localhost:8080/v1/domains/Xphone/adapters/Eric2g/request -H "Content-type: application/json" -d \
 '{
@@ -80,16 +83,16 @@ They are automatically generated during `mvn compile`.
 
 Avro schemas are used to serialize values sent to Kafka topic. (e.g. schemas like `CreateEntityRequestV1`, `ResyncAllStartSubdomainRequestV1`, etc.)
 
-The first version of any schema is "tagged" with suffix 'V1' in schema name. 
+The first version of any schema is "tagged" with suffix 'V1' in schema name.
 **Every** change made to a schema must be FULLy compatible (as understood in this [article](http://cloudurable.com/blog/kafka-avro-schema-registry/index.html)),
 i.e. changes are forwards and backwards compatible from the latest to new and from new to the latest.
 
 Rules (copied from [here](http://cloudurable.com/blog/kafka-avro-schema-registry/index.html)):
-- You can add a field with a default to a schema. 
-- You can remove a field that had a default value. 
-- You can change a field's order attribute. 
-- You can change a field's default value to another value or add a default value to a field that did not have one. 
-- You can remove or add a field alias (keep in mind that this could break some consumers that depend on the alias). 
+- You can add a field with a default to a schema.
+- You can remove a field that had a default value.
+- You can change a field's order attribute.
+- You can change a field's default value to another value or add a default value to a field that did not have one.
+- You can remove or add a field alias (keep in mind that this could break some consumers that depend on the alias).
 - You can change a type to a union that contains original type. 
 (Note: Adding a new value to an enum is NOT forward compatible.)
 
