@@ -12,7 +12,7 @@ EXPOSE 9092
 EXPOSE 9091
 
 # Binaries of our app. (including dependencies)
-COPY target/test-double-kafka-broker-1.0-SNAPSHOT.jar /usr/src/test-double-kafka-broker-1.0-SNAPSHOT.jar
+COPY target/test-double-kafka-broker-1.0-SNAPSHOT-jar-with-dependencies.jar  /usr/src/test-double-kafka-broker-1.0-SNAPSHOT.jar
 
 # Start the app.     (the array syntax - see http://crosbymichael.com/dockerfile-best-practices.html)
 CMD ["java", "-jar", "/usr/src/test-double-kafka-broker-1.0-SNAPSHOT.jar"]

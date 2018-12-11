@@ -4,9 +4,10 @@
 #   In order to do that, you can simply run the same commands you ran in the Jenkins build"
 #
 
-# Starts service: test-double-kafka-broker
-docker-compose --file src/test/resources/docker-compose.yml up -d test-double-kafka-broker
+# Starts Test Double service for a Kafka broker
+docker-compose --file src/test/resources/docker-compose.yml up -d kafka1
 # old approach: docker-compose --file saas-repository-it/src/test/resources/docker-compose.yml up -d test-double-kafka-broker
+# ALTERNATIVE: docker run -it --rm j9soft/test-double-kafka-broker:latest
 
 # Waits for service to start  @TODO probably not needed, as we use an embedded kafka broker, so it is available "immediately <5s" ?
 sleep 30
