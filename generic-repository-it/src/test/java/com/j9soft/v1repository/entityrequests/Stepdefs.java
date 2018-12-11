@@ -56,7 +56,7 @@ public class Stepdefs {
     @Then("^I should not receive any other Entities$")
     public void i_should_not_receive_any_other_Entities() throws Exception {
 
-        assertEquals(MessageFormat.format("Unexpected Entities received:{}", receivedEntities),
+        assertEquals(MessageFormat.format("Unexpected Entities received:{0}", receivedEntities),
                 0, receivedEntities.size());
     }
 
