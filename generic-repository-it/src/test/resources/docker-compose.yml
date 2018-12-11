@@ -1,0 +1,28 @@
+version: "3.2"
+
+services:
+  kafka1:
+    image: j9soft/test-double-kafka-broker:latest
+    networks:
+      - kafka_backend_net
+      
+  generic-repository:
+    image: j9soft/generic-repository:latest
+    networks:
+      - kafka_backend_net
+      
+  generic-repository-it:
+    image: j9soft/generic-repository-it:latest
+    volumes:
+      # on every run we want to re-use libraries previously downloaded by maven as dependencies
+      - type: volume
+        source: maven_repository
+        target: /root/.m2
+    networks:
+      - kafka_backend_net
+      
+volumes:
+  maven_repository:
+
+networks:
+  kafka_backend_net:
