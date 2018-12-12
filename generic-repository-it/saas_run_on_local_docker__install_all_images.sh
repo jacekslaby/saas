@@ -13,12 +13,6 @@
 cd ../generic-repository/
 mvn clean install docker:build
 
-cd ../test-double-kafka-broker/
-mvn clean install docker:build
-
-cd ../test-double-kafka-schema-registry/
-mvn clean package docker:build
-
 cd ../generic-repository-it/
 mvn clean docker:build
 #

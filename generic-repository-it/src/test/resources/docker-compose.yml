@@ -55,11 +55,6 @@ services:
     networks:
       - kafka_backend_net
 
-  kafka1:
-    image: j9soft/test-double-kafka-broker:latest
-    networks:
-      - kafka_backend_net
-      
   generic-repository:
     image: j9soft/generic-repository:latest
     networks:
