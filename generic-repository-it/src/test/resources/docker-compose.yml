@@ -1,6 +1,60 @@
 version: "3.2"
 
 services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.0.1
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - '2181:2181'
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - kafka_backend_net
+      
+  kafka:
+    image: confluentinc/cp-enterprise-kafka:5.0.1
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - '9092:9092'
+      - '29092:29092'
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+    networks:
+      - kafka_backend_net
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:5.0.1
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - '8081:8081'
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+    networks:
+      - kafka_backend_net
+
   kafka1:
     image: j9soft/test-double-kafka-broker:latest
     networks:
@@ -13,6 +67,9 @@ services:
       
   generic-repository-it:
     image: j9soft/generic-repository-it:latest
+    depends_on:
+      - kafka
+      - schema-registry
     volumes:
       # on every run we want to re-use libraries previously downloaded by maven as dependencies
       - type: volume
@@ -20,6 +77,8 @@ services:
         target: /root/.m2
     networks:
       - kafka_backend_net
+    environment:
+      GRIT_BOOTSTRAP_SERVERS: kafka:29092
       
 volumes:
   maven_repository:

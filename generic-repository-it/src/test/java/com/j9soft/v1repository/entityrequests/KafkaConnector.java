@@ -21,27 +21,37 @@ public class KafkaConnector {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaConnector.class);
 
-    private static final String BROKER_HOST = "kafka1";
-    private static final Integer BROKER_PORT = 9092;
-    private static String KAFKA_BOOTSTRAP_SERVERS;
+    private static final String BROKER_HOST = "kafka";
+    private static final Integer BROKER_PORT = 29092;
+    private static String GRIT_BOOTSTRAP_SERVERS;
 
     private static final String TOPIC_NAME__COMMANDS = "v1-commands-topic";
 
     static {
         // If we want to run 'mvn verify' not from docker-compose. (i.e. when 'kafka1' hostname is not provided)
         //  then we use environment variable to tell where our Kafka broker is.
-        //  (e.g. on Windows + DockerMachine in VirtualBox + kafka1 in a container (with exposed public port 9092) we use:
-        //      docker-compose --file src/test/resources/docker-compose.yml run -p 9092:9092 -d kafka1
-        //      SET KAFKA_BOOTSTRAP_SERVERS=192.168.99.100:9092
+        //  (e.g. on Windows + DockerMachine in VirtualBox (with IP 192.168.99.100) + kafka in a container (with exposed public port 29092) we use:
+        //      docker-compose --file src/test/resources/docker-compose.yml run -p 29092:9092 -d kafka
+        //      SET GRIT_BOOTSTRAP_SERVERS=192.168.99.100:29092
         //      mvn verify
-        //  )
         //
-        String envValue = System.getenv("KAFKA_BOOTSTRAP_SERVERS");
+        //      (and you need /etc/hosts: 192.168.99.100   kafka # because broker returns its DNS name 'kafka' and producer connects to it)
+        //  )
+        /*  (Hm.... probably easier is to just do:
+               mvn docker:build
+               docker-compose --file src/test/resources/docker-compose.yml  run --rm  generic-repository-it
+
+        //   It is a bit longer, but much simpler.  (the trouble is that we loose IDE help, e.g. exception stack trace navigation...)
+        //  )
+        */
+        String envValue = System.getenv("GRIT_BOOTSTRAP_SERVERS");
         if (envValue != null) {
-            KAFKA_BOOTSTRAP_SERVERS = envValue;
+            GRIT_BOOTSTRAP_SERVERS = envValue;
         } else {
-            KAFKA_BOOTSTRAP_SERVERS = BROKER_HOST + ":" + BROKER_PORT;
+            GRIT_BOOTSTRAP_SERVERS = BROKER_HOST + ":" + BROKER_PORT;
         }
+
+        logger.info("GRIT_BOOTSTRAP_SERVERS={}", GRIT_BOOTSTRAP_SERVERS);
     }
 
     public static KafkaProducer<String, Object> connectProducer() {
@@ -50,7 +60,7 @@ public class KafkaConnector {
         //
         // Producer configuration.
         Properties producerProps = new Properties();
-        producerProps.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP_SERVERS);
+        producerProps.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, GRIT_BOOTSTRAP_SERVERS);
         producerProps.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "generic-repository-it-producer");
         //
         StringSerializer keySerializer = new StringSerializer();
