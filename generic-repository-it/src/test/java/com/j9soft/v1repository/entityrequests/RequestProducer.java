@@ -27,7 +27,7 @@ public class RequestProducer {
      */
     // @TODO @Autowired
     public RequestProducer() {
-        this.topicName = KafkaConnector.getTopicName();
+        this.topicName = KafkaConnector.getCommandsTopicName();
         this.producer = KafkaConnector.connectProducer();
     }
 

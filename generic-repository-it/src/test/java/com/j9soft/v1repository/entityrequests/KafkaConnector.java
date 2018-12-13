@@ -1,31 +1,38 @@
 package com.j9soft.v1repository.entityrequests;
 
+import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 /**
- * Provider of a producer connected to Kafka broker.
+ * Provider of a producer/consumer connected to Kafka broker.
  */
 public class KafkaConnector {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaConnector.class);
 
-    private static final String BROKER_HOST = "kafka";
-    private static final Integer BROKER_PORT = 29092;
     private static String GRIT_BOOTSTRAP_SERVERS;
+    private static String GRIT_SCHEMA_REGISTRY_URL;
 
     private static final String TOPIC_NAME__COMMANDS = "v1-commands-topic";
+    private static final String TOPIC_NAME__ENTITIES = "v1-entities-topic";
 
     static {
         // If we want to run 'mvn verify' not from docker-compose. (i.e. when 'kafka1' hostname is not provided)
@@ -44,14 +51,20 @@ public class KafkaConnector {
         //   It is a bit longer, but much simpler.  (the trouble is that we loose IDE help, e.g. exception stack trace navigation...)
         //  )
         */
-        String envValue = System.getenv("GRIT_BOOTSTRAP_SERVERS");
-        if (envValue != null) {
-            GRIT_BOOTSTRAP_SERVERS = envValue;
-        } else {
-            GRIT_BOOTSTRAP_SERVERS = BROKER_HOST + ":" + BROKER_PORT;
-        }
-
+        GRIT_BOOTSTRAP_SERVERS = readFromEnv("GRIT_BOOTSTRAP_SERVERS", "kafka:29092");
         logger.info("GRIT_BOOTSTRAP_SERVERS={}", GRIT_BOOTSTRAP_SERVERS);
+
+        GRIT_SCHEMA_REGISTRY_URL = readFromEnv("GRIT_SCHEMA_REGISTRY_URL", "http://schema-registry:8081");
+        logger.info("GRIT_SCHEMA_REGISTRY_URL={}", GRIT_SCHEMA_REGISTRY_URL);
+    }
+
+    private static String readFromEnv(String envPropertyName, String valueReturnedIfPropertyDoesNotExist) {
+        String envValue = System.getenv(envPropertyName);
+        if (envValue != null) {
+            return envValue;
+        } else {
+            return valueReturnedIfPropertyDoesNotExist;
+        }
     }
 
     public static KafkaProducer<String, Object> connectProducer() {
@@ -65,6 +78,7 @@ public class KafkaConnector {
         //
         StringSerializer keySerializer = new StringSerializer();
         //
+        // @TODO use the real schema registry (but first create a test case which will show the problem)
         SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient();
         Map<String, String> kasConfig = new HashMap<>() ;
         kasConfig.put(AbstractKafkaAvroSerDeConfig.VALUE_SUBJECT_NAME_STRATEGY, "io.confluent.kafka.serializers.subject.RecordNameStrategy");
@@ -80,7 +94,36 @@ public class KafkaConnector {
         return producer;
     }
 
-    public static String getTopicName() {
+    public static KafkaConsumer<String, EntityV1> connectConsumer() {
+
+        // Consumer:
+        //
+        // Consumer configuration.
+        Properties consumerProps = new Properties();
+        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, GRIT_BOOTSTRAP_SERVERS);
+        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "generic-repository-it-producer");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "generic-repository-it-producer");
+        consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
+        consumerProps.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        consumerProps.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, GRIT_SCHEMA_REGISTRY_URL);
+        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
+        consumerProps.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
+
+        // Create a new consumer instance.
+        KafkaConsumer<String, EntityV1> consumer = new KafkaConsumer<>(consumerProps);
+        consumer.subscribe(Collections.singletonList(getEntitiesTopicName()));
+        logger.info("Kafka consumer: " + consumer);
+
+        return consumer;
+    }
+
+    public static String getCommandsTopicName() {
         return TOPIC_NAME__COMMANDS;
+    }
+
+    public static String getEntitiesTopicName() {
+        return TOPIC_NAME__ENTITIES;
     }
 }

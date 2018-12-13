@@ -74,6 +74,8 @@ services:
       - kafka_backend_net
     environment:
       GRIT_BOOTSTRAP_SERVERS: kafka:29092
+      GRIT_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+
       
 volumes:
   maven_repository:

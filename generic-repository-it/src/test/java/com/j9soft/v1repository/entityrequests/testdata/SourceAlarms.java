@@ -1,6 +1,7 @@
 package com.j9soft.v1repository.entityrequests.testdata;
 
 import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
+import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -35,21 +36,40 @@ public enum SourceAlarms {
     }
 
     private static String SOURCE_ALARM = "SourceAlarm";
+    private static String ENTITY_SUBDOMAIN_NAME = "Xphone:AdapterSiemens_nw";
+    private static String ENTITY_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER = "NotificationIdentifier";
 
     private String uniqueLabel;
 
     public CreateEntityRequestV1 buildCreateEntityRequest() {
+        Map<CharSequence, CharSequence> attributes = new HashMap<>();
+        attributes.put(ENTITY_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, ENTITY_SUBDOMAIN_NAME + ":" + uniqueLabel);
+
         return CreateEntityRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
                 .setEntityTypeName(SOURCE_ALARM)
-                .setEntitySubdomainName("@TODO entitySubdomainName")
-                .setEntityIdInSubdomain("@TODO createAlarmRequest.getAlarmDto().getNotificationIdentifier()")
+                .setEntitySubdomainName(ENTITY_SUBDOMAIN_NAME)
+                .setEntityIdInSubdomain(ENTITY_SUBDOMAIN_NAME + ":" + uniqueLabel)
+                .setEntityAttributes(attributes)
                 .build();
     }
 
-    // @TODO change to EntityV1
-    public CreateEntityRequestV1 buildEntity() {
-        return null;
+    public EntityV1 buildEntity() {
+        Map<CharSequence, CharSequence> attributes = new HashMap<>();
+        attributes.put(ENTITY_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, ENTITY_SUBDOMAIN_NAME + ":" + uniqueLabel);
+
+        return EntityV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(System.currentTimeMillis())
+                .setEntityTypeName(SOURCE_ALARM)
+                .setEntitySubdomainName(ENTITY_SUBDOMAIN_NAME)
+                .setEntityIdInSubdomain(ENTITY_SUBDOMAIN_NAME + ":" + uniqueLabel)
+                .setEntityAttributes(attributes)
+                .build();
     }
+
+    public static final String SCHEMA__UUID = "uuid";
+    public static final String SCHEMA__ENTRY_DATE = "entry_date";
+    public static final String SCHEMA__EVENT_DATE = "event_date";
 }
