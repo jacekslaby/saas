@@ -30,9 +30,10 @@ public class KafkaConnector {
 
     private static String GRIT_BOOTSTRAP_SERVERS;
     private static String GRIT_SCHEMA_REGISTRY_URL;
+    private static String GRIT_REPOSITORY_NAME;
 
-    private static final String TOPIC_NAME__COMMANDS = "v1-commands-topic";
-    private static final String TOPIC_NAME__ENTITIES = "v1-entities-topic";
+    private static String TOPIC_NAME__COMMANDS;
+    private static String TOPIC_NAME__ENTITIES;
 
     static {
         // If we want to run 'mvn verify' not from docker-compose. (i.e. when 'kafka1' hostname is not provided)
@@ -56,6 +57,12 @@ public class KafkaConnector {
 
         GRIT_SCHEMA_REGISTRY_URL = readFromEnv("GRIT_SCHEMA_REGISTRY_URL", "http://schema-registry:8081");
         logger.info("GRIT_SCHEMA_REGISTRY_URL={}", GRIT_SCHEMA_REGISTRY_URL);
+
+        GRIT_REPOSITORY_NAME = readFromEnv("GRIT_REPOSITORY_NAME", "prodxphone-saas");
+        logger.info("GRIT_REPOSITORY_NAME={}", GRIT_REPOSITORY_NAME);
+
+        TOPIC_NAME__COMMANDS = GRIT_REPOSITORY_NAME + "-" + "v1-commands-topic";
+        TOPIC_NAME__ENTITIES = GRIT_REPOSITORY_NAME + "-" + "v1-entities-topic";
     }
 
     private static String readFromEnv(String envPropertyName, String valueReturnedIfPropertyDoesNotExist) {
