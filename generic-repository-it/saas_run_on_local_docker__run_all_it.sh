@@ -7,11 +7,20 @@
 #
 
 # Starts Test Double services for Zookeeper, Kafka broker and Schema Registry
+# ( https://docs.confluent.io/current/installation/docker/docs/config-reference.html
+#   https://docs.confluent.io/current/installation/docker/docs/image-reference.html
+# )
+#
 docker-compose --file src/test/resources/docker-compose.yml up -d zookeeper
 docker-compose --file src/test/resources/docker-compose.yml up -d kafka
 docker-compose --file src/test/resources/docker-compose.yml up -d schema-registry
 
 # ALTERNATIVE: docker run -it --rm confluentinc/cp-enterprise-kafka:5.0.1
+
+# Create topics required by k-repository.
+# (Note: in Production of course a different configuration is needed, e.g. number of partitions depending on network size.)
+#
+
 
 # Waits for service to start  @TODO probably not needed ?
 sleep 30
