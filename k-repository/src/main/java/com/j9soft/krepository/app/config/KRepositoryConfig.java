@@ -26,7 +26,7 @@ public class KRepositoryConfig {
     private String repositoryName;
 
     @Autowired
-    KRepositoryConfig(@Value("${KR_BOOTSTRAP_SERVERS:kafka:29092}") String bootstrapServers,
+    KRepositoryConfig(@Value("${KR_BOOTSTRAP_SERVERS:kafka:9092}") String bootstrapServers,
                       @Value("${KR_SCHEMA_REGISTRY_URL:http://schema-registry:8081}") String schemaRegistryUrl,
                       @Value("${KR_REPOSITORY_NAME}") String repositoryName) {
 

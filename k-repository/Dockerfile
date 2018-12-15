@@ -16,7 +16,7 @@ CMD ["java", "-jar", "/app/k-repository.jar"]
 # The app expects the following resources to be provided:
 #
 # - environment variables:   (given here with example values)
-#     KR_BOOTSTRAP_SERVERS: kafka:29092
+#     KR_BOOTSTRAP_SERVERS: kafka:9092
 #     KR_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
 #     KR_REPOSITORY_NAME: prodxphone-saas
 #

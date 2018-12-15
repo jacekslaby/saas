@@ -1,10 +1,9 @@
-version: "3.2"
+version: '3.2'
 
 services:
-  # Using community images - https://docs.confluent.io/current/installation/docker/docs/image-reference.html
-  #
+  # using https://hub.docker.com/r/wurstmeister/kafka/
   zookeeper:
-    image: confluentinc/cp-zookeeper:5.0.1
+    image: wurstmeister/zookeeper
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -15,8 +14,9 @@ services:
     networks:
       - kafka_backend_net
       
+  # using https://hub.docker.com/r/wurstmeister/kafka/
   kafka:
-    image: confluentinc/cp-kafka:5.0.1
+    image: wurstmeister/kafka
     hostname: kafka
     container_name: kafka
     ports:
@@ -25,16 +25,20 @@ services:
     depends_on:
       - zookeeper
     environment:
-      KAFKA_BROKER_ID: 1
+      KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # Let's create topics required by k-repository: (see also https://github.com/wurstmeister/kafka-docker - Automatically create topics )
+      KAFKA_CREATE_TOPICS: "prodxphone-saas-v1-commands-topic:3:1,prodxphone-saas-v1-entities-topic:3:1:compact"
     networks:
       - kafka_backend_net
 
+  # Using community images - https://docs.confluent.io/current/installation/docker/docs/image-reference.html
   schema-registry:
     image: confluentinc/cp-schema-registry:5.0.1
     hostname: schema-registry
@@ -50,8 +54,12 @@ services:
     networks:
       - kafka_backend_net
 
-  generic-repository:
-    image: j9soft/generic-repository:latest
+  k-repository:
+    image: j9soft/k-repository:latest
+    environment:
+      KR_BOOTSTRAP_SERVERS: kafka:9092
+      KR_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      KR_REPOSITORY_NAME: prodxphone-saas
     networks:
       - kafka_backend_net
       
@@ -60,6 +68,7 @@ services:
     depends_on:
       - kafka
       - schema-registry
+      #@TODO - k-repository
     volumes:
       # on every run we want to re-use libraries previously downloaded by maven as dependencies
       - type: volume

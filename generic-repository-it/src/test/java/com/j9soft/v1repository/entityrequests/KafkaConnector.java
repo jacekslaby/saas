@@ -51,7 +51,7 @@ public class KafkaConnector {
         //   It is a bit longer, but much simpler.  (the trouble is that we loose IDE help, e.g. exception stack trace navigation...)
         //  )
         */
-        GRIT_BOOTSTRAP_SERVERS = readFromEnv("GRIT_BOOTSTRAP_SERVERS", "kafka:29092");
+        GRIT_BOOTSTRAP_SERVERS = readFromEnv("GRIT_BOOTSTRAP_SERVERS", "kafka:9092");
         logger.info("GRIT_BOOTSTRAP_SERVERS={}", GRIT_BOOTSTRAP_SERVERS);
 
         GRIT_SCHEMA_REGISTRY_URL = readFromEnv("GRIT_SCHEMA_REGISTRY_URL", "http://schema-registry:8081");
