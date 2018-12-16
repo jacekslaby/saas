@@ -1,6 +1,7 @@
 package com.j9soft.krepository.app.config;
 
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,6 +96,11 @@ public class KRepositoryConfig {
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "testing-streams-api"); // @TODO what is the meaning ?
         // The Kafka bootstrap servers. This is the same setting that is used by the underlying producer and consumer clients to connect to the Kafka cluster.
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
+
+        // We want to skip unknown requests, i.e. those not matching avro schemas.
+        // ( https://cwiki.apache.org/confluence/display/KAFKA/KIP-161%3A+streams+deserialization+exception+handlers )
+        props.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+                LogAndContinueExceptionHandler.class.getName());
 
         // @TODO throw away ?
         //props.put(StreamsConfig.ZOOKEEPER_CONNECT_CONFIG, "localhost:2181");
