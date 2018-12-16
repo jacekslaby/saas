@@ -1,5 +1,6 @@
 package com.j9soft.v1repository.entityrequests;
 
+import com.j9soft.krepository.v1.commandsmodel.UknownEntityRequestV1;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 import com.j9soft.v1repository.entityrequests.testdata.SourceAlarms;
 import cucumber.api.Scenario;
@@ -117,6 +118,20 @@ public class Stepdefs {
         receivedEntities = new ArrayList<>();
         receivedEntities.add( SourceAlarms.A.buildEntity() );
         receivedEntities.add( SourceAlarms.B.buildEntity() );
+    }
+
+    @When("^I send UknownEntityRequest I should receive exception$")
+    public void i_send_UknownEntityRequest() throws Exception {
+
+        try {
+            producer.sendNewRequest(
+                    UknownEntityRequestV1.newBuilder().setUuid(UUID.randomUUID().toString())
+                            .build());
+        } catch (Exception e) {
+            // @TODO how to make this more specific ? (and not to catch irrelevant potential exceptions)
+        }
+        // @TODO Uncomment this when a script to register schemas is available.
+        //fail("An exception about unknown request should have been thrown.");
     }
 
     @After

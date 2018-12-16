@@ -1,0 +1,8 @@
+{"namespace": "com.j9soft.krepository.v1.commandsmodel",
+  "type": "record",
+  "name": "UknownEntityRequestV1",
+  "doc": "Type for uknown requests. Used to test that incorrect requests cause an exception to be thrown by Schema Registry.",
+  "fields": [
+    {"name": "uuid", "type": "string", "doc": "UUID of this request"}
+  ]
+}

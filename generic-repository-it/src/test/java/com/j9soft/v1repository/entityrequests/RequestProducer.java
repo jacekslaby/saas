@@ -1,9 +1,6 @@
 package com.j9soft.v1repository.entityrequests;
 
-import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
-import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
-import com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1;
-import com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -59,7 +56,15 @@ public class RequestProducer {
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record).get();
     }
-    
+
+    public void sendNewRequest(UknownEntityRequestV1 request) throws ExecutionException, InterruptedException {
+
+        logger.info("RequestUuid:{} - sendNewRequest(UknownEntityRequestV1)", request.getUuid());
+
+        ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
+        this.producer.send(record).get();
+    }
+
     public void close() {
         if (this.producer != null) {
             this.producer.close();
