@@ -11,7 +11,7 @@
 
 # Generates the images in Docker
 cd ../generic-repository/
-mvn clean install docker:build
+mvn clean package docker:build
 
 cd ../generic-repository-it/
 mvn clean docker:build
