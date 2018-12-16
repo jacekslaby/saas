@@ -1,12 +1,8 @@
 package com.j9soft.v1repository.entityrequests;
 
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
-import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
-import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import io.confluent.kafka.serializers.*;
+import io.confluent.kafka.serializers.subject.RecordNameStrategy;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -17,8 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -83,19 +77,27 @@ public class KafkaConnector {
         producerProps.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, GRIT_BOOTSTRAP_SERVERS);
         producerProps.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "generic-repository-it-producer");
         //
-        StringSerializer keySerializer = new StringSerializer();
+        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         //
-        // @TODO use the real schema registry (but first create a test case which will show the problem)
-        SchemaRegistryClient mockSchemaRegistryClient = new MockSchemaRegistryClient();
-        Map<String, String> kasConfig = new HashMap<>() ;
-        kasConfig.put(AbstractKafkaAvroSerDeConfig.VALUE_SUBJECT_NAME_STRATEGY, "io.confluent.kafka.serializers.subject.RecordNameStrategy");
-        kasConfig.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, " @TODO ");
-        // btw: Default is 'auto register schemas=true' so we do not have to register our schemas in the mock schema registry.
-        // Create a value serializer instance:
-        KafkaAvroSerializer valueSerializer = new KafkaAvroSerializer(mockSchemaRegistryClient, kasConfig);
-        //
+        // We need schema registry for avro schemas.
+        // (see also https://dzone.com/articles/kafka-avro-serialization-and-the-schema-registry )
+        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
+        producerProps.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, GRIT_SCHEMA_REGISTRY_URL);
+        // We have may types (avro schemas) used on both topics,
+        //  so we need to tell the serializers/deserializers that fact.
+        // (see also:
+        //   http://martin.kleppmann.com/2018/01/18/event-types-in-kafka-topic.html
+        //     serdeConfig.put("value.subject.name.strategy", "io.confluent.kafka.serializers.subject.RecordNameStrategy");
+        //   https://stackoverflow.com/questions/51429759/multiple-message-types-in-a-single-kafka-topic-with-avro
+        //     "I haven't seen any working example of this. Not even a single one."
+        // )
+        producerProps.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
+        // btw: Default is 'auto register schemas=true' so we need to put 'false' in order to discover uknown schemas.
+        // @TODO Uncomment this when a script to register schemas is available.
+        //producerProps.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false");
+
         // Create a new producer instance.
-        KafkaProducer<String, Object> producer = new KafkaProducer<>(producerProps, keySerializer, valueSerializer);
+        KafkaProducer<String, Object> producer = new KafkaProducer<>(producerProps);
         logger.info("Kafka producer: " + producer);
 
         return producer;
