@@ -10,6 +10,8 @@ import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import org.assertj.core.api.Assertions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,8 @@ import static org.hamcrest.number.OrderingComparison.lessThanOrEqualTo;
 import static org.junit.Assert.*;
 
 public class Stepdefs {
+    private static final Logger logger = LoggerFactory.getLogger(EntityConsumer.class);
+
     private List<EntityV1> receivedEntities;
     private RequestProducer producer;
     private EntityConsumer consumer;
@@ -27,12 +31,20 @@ public class Stepdefs {
     @Given("^I am connected as producer to CommandsTopic$")
     public void i_am_connected_as_producer_to_CommandsTopic() {
 
+        if (producer != null) {
+            // close the previous, if any
+            producer.close();
+        }
         producer = new RequestProducer();
     }
 
     @Given("^I am connected as consumer to EntitiesTopic$")
     public void i_am_connected_as_consumer_to_EntitiesTopic() {
 
+        if (consumer != null) {
+            // close the previous, if any
+            consumer.close();
+        }
         consumer = new EntityConsumer();
     }
 
@@ -68,6 +80,8 @@ public class Stepdefs {
 
     @Given("^no Entity SourceAlarm exists$")
     public void no_Entity_SourceAlarm_exists() throws Exception {
+        logger.info("no_Entity_SourceAlarm_exists: start");
+
         // Let's load all entities existing in the topic.
         receivedEntities = consumer.pollAllExistingEntities();
 
@@ -75,6 +89,8 @@ public class Stepdefs {
         for (EntityV1 entity: receivedEntities) {
             producer.sendNewRequest( buildDeleteEntityRequest(entity) );
         }
+
+        logger.info("no_Entity_SourceAlarm_exists: end");
     }
 
     public DeleteEntityRequestV1 buildDeleteEntityRequest(EntityV1 entity) {
@@ -159,12 +175,12 @@ public class Stepdefs {
     @After
     public void cleanup(Scenario scenario){
         // Cleanup - close the producer.
-        if (this.producer != null) {
-            this.producer.close();
+        if (producer != null) {
+            producer.close();
         }
         // Cleanup - close the consumer.
-        if (this.consumer != null) {
-            this.consumer.close();
+        if (consumer != null) {
+            consumer.close();
         }
     }
 }

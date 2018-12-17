@@ -56,6 +56,11 @@ public class EntityConsumer {
 
         logger.info("pollAllExistingEntities: start");
 
+        // Unnecessary poll() but it is a necessary workaround.
+        // See also: https://stackoverflow.com/questions/28561147/how-to-read-data-using-kafka-consumer-api-from-beginning
+        //  " call poll(), then do a seekToBeginning() and then again call poll() if you want all the records from the start. "
+        consumer.poll(Duration.ofSeconds(1));
+
         this.consumer.seekToBeginning( this.consumer.assignment() );
 
         List<EntityV1> resultList = new ArrayList<>();
