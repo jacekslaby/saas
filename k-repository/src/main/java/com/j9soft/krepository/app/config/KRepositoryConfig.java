@@ -70,17 +70,6 @@ public class KRepositoryConfig {
     public Properties getStreamsProperties() {
         Properties props = new Properties();
 
-//        @TODO throw away ?
-//        // @TODO provide real values. Based on environment settings.  (e.g. to be able to run more than one ?
-//        props.put(StreamsConfig.CLIENT_ID_CONFIG, "Example-Kafka-Streams-Job");
-//
-//        @TODO throw away ?
-//        // It does not make sens to run the same logic with a different repository name (i.e. a different group.id)
-//        //  because it would produce duplicates on the output topics.
-//        // So, in order to prevent it, we name this application as provided in the environment.
-//        //
-//        props.put("group.id", this.repositoryName);
-//
         // Setting configuration according to:
         //   https://kafka.apache.org/21/documentation/streams/developer-guide/config-streams
         //
@@ -93,7 +82,8 @@ public class KRepositoryConfig {
         // As the name of the subdirectory in the state directory (cf. state.dir)
         // As the prefix of internal Kafka topic names
         //
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "testing-streams-api"); // @TODO what is the meaning ?
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "k-repository-" + this.repositoryName);
+
         // The Kafka bootstrap servers. This is the same setting that is used by the underlying producer and consumer clients to connect to the Kafka cluster.
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
 
@@ -102,8 +92,6 @@ public class KRepositoryConfig {
         props.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
                 LogAndContinueExceptionHandler.class.getName());
 
-        // @TODO throw away ?
-        //props.put(StreamsConfig.ZOOKEEPER_CONNECT_CONFIG, "localhost:2181");
         props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 1);
 
         return props;
