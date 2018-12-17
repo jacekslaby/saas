@@ -3,7 +3,7 @@ package com.j9soft.krepository.app.logic;
 import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
-import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.kstream.ValueJoiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ import java.util.UUID;
  * See also:
  * https://kafka.apache.org/21/javadoc/org/apache/kafka/streams/kstream/ValueJoiner.html
  */
-public class CommandExecutor implements ValueJoiner<GenericRecord, GenericRecord, EntityV1> {
+public class CommandExecutor implements ValueJoiner<SpecificRecord, SpecificRecord, EntityV1> {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandExecutor.class);
 
@@ -51,16 +51,14 @@ public class CommandExecutor implements ValueJoiner<GenericRecord, GenericRecord
 
 
     @Override
-    public EntityV1 apply(GenericRecord command, GenericRecord currentEntityValue) {
+    public EntityV1 apply(SpecificRecord command, SpecificRecord currentEntityValue) {
 
         String commandTypeName = command.getSchema().getFullName();
         logger.info("CommandExecutor.apply: {}", commandTypeName);
 
         if ( commandTypeName.equals(CreateEntityRequestV1.class.getName()) ) {
             return createEntity((CreateEntityRequestV1) command, currentEntityValue);
-            // (Note: This cast ^^^^^^^^^^^^^^^^^^^^^^^  is 'legal' because it is also used in
-            //   https://github.com/confluentinc/schema-registry/blob/master/avro-serde/src/main/java/io/confluent/kafka/streams/serdes/avro/SpecificAvroDeserializer.java )
-            // )
+            // (Note: This cast ^^^^^^^^^^^^^^^^^^^^^^^  is 'legal' because we use SpecificRecord and SpecificAvroSerde. )
 
         } else if ( commandTypeName.equals(DeleteEntityRequestV1.class.getName()) ) {
             return deleteEntity((DeleteEntityRequestV1) command, currentEntityValue);
@@ -71,7 +69,7 @@ public class CommandExecutor implements ValueJoiner<GenericRecord, GenericRecord
         }
     }
 
-    private EntityV1 createEntity(CreateEntityRequestV1 command, GenericRecord currentEntityValue) {
+    private EntityV1 createEntity(CreateEntityRequestV1 command, SpecificRecord currentEntityValue) {
         if (currentEntityValue != null) {
 
             // We do not change the already existing entity.  (btw: there is PutEntityRequest for this)
@@ -85,7 +83,7 @@ public class CommandExecutor implements ValueJoiner<GenericRecord, GenericRecord
         }
     }
 
-    private EntityV1 deleteEntity(DeleteEntityRequestV1 command, GenericRecord currentEntityValue) {
+    private EntityV1 deleteEntity(DeleteEntityRequestV1 command, SpecificRecord currentEntityValue) {
         if (currentEntityValue != null) {
 
             // We delete the existing entity. (i.e. we return null as a tombstone)

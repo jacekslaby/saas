@@ -1,10 +1,11 @@
 package com.j9soft.krepository.app.logic;
 
 import com.j9soft.krepository.app.config.KRepositoryConfig;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.confluent.kafka.serializers.subject.RecordNameStrategy;
-import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
-import org.apache.avro.generic.GenericRecord;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -14,13 +15,9 @@ import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.state.KeyValueStore;
-import org.apache.kafka.streams.state.StoreBuilder;
-import org.apache.kafka.streams.state.Stores;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,10 +53,15 @@ public class ProcessingTopology {
         // )
         serdeConfig.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
         //
-        final Serde<GenericRecord> commandSerde = new GenericAvroSerde();
+        // We want to receive POJOs, so we cannot use GenericAvroSerde. Instead we have:
+        //  (see also: https://dzone.com/articles/kafka-avro-serialization-and-the-schema-registry
+        //    https://stackoverflow.com/questions/31207768/generic-conversion-from-pojo-to-avro-record
+        //  )
+        serdeConfig.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
+        final Serde<SpecificRecord> commandSerde = new SpecificAvroSerde<>();
         commandSerde.configure(serdeConfig, false); // `false` for record values
         //
-        final Serde<GenericRecord> entitySerde = new GenericAvroSerde();
+        final Serde<SpecificRecord> entitySerde = new SpecificAvroSerde<>();
         commandSerde.configure(serdeConfig, false); // `false` for record values
 
         // Let's prepare our k-streams processing Topology:
@@ -76,7 +78,7 @@ public class ProcessingTopology {
         //   but its value is irrelevant. (and producers must assure that a copy of every subdomain request
         //    is published to every partition of v1-commands-topic, i.e. they should not use key based partitioner)
         //
-        KStream<String, GenericRecord> commandsStream = builder.stream( config.getCommandsTopicName(),
+        KStream<String, SpecificRecord> commandsStream = builder.stream( config.getCommandsTopicName(),
                 Consumed.with(keySerde, commandSerde));
 
         // Input table with current entity values.
@@ -88,12 +90,12 @@ public class ProcessingTopology {
         //
         // @TODO You must provide a name for the table (more precisely, for the internal state store that backs the table). This is required for supporting interactive queries against the table. When a name is not provided the table will not queryable and an internal name will be provided for the state store.
         //
-        KTable<String, GenericRecord> currentEntitiesTable = builder.table( config.getEntitiesTopicName(),
+        KTable<String, SpecificRecord> currentEntitiesTable = builder.table( config.getEntitiesTopicName(),
                 Consumed.with(keySerde, entitySerde));
 
         // For every received Let's perform lookup
         //
-        KStream<String, GenericRecord> newEntitiesStream =
+        KStream<String, SpecificRecord> newEntitiesStream =
                 // https://kafka.apache.org/21/documentation/streams/developer-guide/dsl-api
                 // "KTable also provides an ability to look up current values of data records by keys.
                 //  This table-lookup functionality is available through join operations
@@ -105,6 +107,8 @@ public class ProcessingTopology {
                 //
                 commandsStream.leftJoin(currentEntitiesTable,
                         new CommandExecutor()); // the user-supplied ValueJoiner will be called to produce join output records.
+
+        // @ TODO on entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain
 
         // Publish the new values to the same topic, v1-entities-topic.
         //
@@ -138,7 +142,7 @@ bo: nie będzie tych zbędnych topic'ów.
         //  https://docs.confluent.io/current/streams/developer-guide/processor-api.html#connecting-processors-and-state-stores
         //  https://github.com/bbejeck/kafka-streams/blob/master/src/main/java/bbejeck/streams/purchases/PurchaseKafkaStreamsDriver.java
         //  https://github.com/confluentinc/online-inferencing-blog-application/blob/master/src/main/java/org/apache/kafka/inference/blog/streams/KStreamsOnLinePredictions.java
-        //
+        //  http://codingjunkie.net/kafka-processor-part1/
 
         Topology topology = new Topology();
 
