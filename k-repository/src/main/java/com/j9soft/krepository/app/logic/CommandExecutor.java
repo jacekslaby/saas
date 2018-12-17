@@ -54,17 +54,20 @@ public class CommandExecutor implements ValueJoiner<SpecificRecord, SpecificReco
     public EntityV1 apply(SpecificRecord command, SpecificRecord currentEntityValue) {
 
         String commandTypeName = command.getSchema().getFullName();
-        logger.info("CommandExecutor.apply: {}", commandTypeName);
 
         if ( commandTypeName.equals(CreateEntityRequestV1.class.getName()) ) {
-            return createEntity((CreateEntityRequestV1) command, currentEntityValue);
-            // (Note: This cast ^^^^^^^^^^^^^^^^^^^^^^^  is 'legal' because we use SpecificRecord and SpecificAvroSerde. )
+            // (Note: This cast is 'legal' because we use SpecificRecord and SpecificAvroSerde. )
+            CreateEntityRequestV1 request = (CreateEntityRequestV1) command;
+            logger.info("CommandExecutor.apply: CreateEntityRequestV1: uuid = {}", request.getUuid() );
+            return createEntity(request, currentEntityValue);
 
         } else if ( commandTypeName.equals(DeleteEntityRequestV1.class.getName()) ) {
-            return deleteEntity((DeleteEntityRequestV1) command, currentEntityValue);
+            DeleteEntityRequestV1 request = (DeleteEntityRequestV1) command;
+            logger.info("CommandExecutor.apply: DeleteEntityRequestV1: uuid = {}", request.getUuid());
+            return deleteEntity(request, currentEntityValue);
 
         } else {
-            logger.info("CommandExecutor.apply: Uknown request. Command ignored.");
+            logger.info("CommandExecutor.apply: Uknown request '{}'. Command ignored.", commandTypeName);
             return UKNOWN_ENTITY_TO_BE_IGNORED;
         }
     }
