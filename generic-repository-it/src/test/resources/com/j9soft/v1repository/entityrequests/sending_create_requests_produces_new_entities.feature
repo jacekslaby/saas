@@ -17,8 +17,7 @@ Feature: Sending create requests produces new entities
     And I should receive Entity SourceAlarm "B"
 
   Scenario: Send 2 CreateEntityRequests and have 2 Entities stored in Repository
-    Given Entity SourceAlarm "A" does not exist
-    And Entity SourceAlarm "B" does not exist
+    Given no Entity SourceAlarm exists
     When I send CreateEntityRequest with SourceAlarm "A"
     And I send CreateEntityRequest with SourceAlarm "B"
     And I poll all existing Entities from Repository

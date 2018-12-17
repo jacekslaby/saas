@@ -1,5 +1,6 @@
 package com.j9soft.v1repository.entityrequests;
 
+import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.UknownEntityRequestV1;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 import com.j9soft.v1repository.entityrequests.testdata.SourceAlarms;
@@ -63,6 +64,27 @@ public class Stepdefs {
         for (EntityV1 entity: receivedEntities) {
             assertNotEquals(alarmThatShouldNotExist.getEntityIdInSubdomain(), entity.getEntityIdInSubdomain());
         }
+    }
+
+    @Given("^no Entity SourceAlarm exists$")
+    public void no_Entity_SourceAlarm_exists() throws Exception {
+        // Let's load all entities existing in the topic.
+        receivedEntities = consumer.pollAllExistingEntities();
+
+        // Browse them all and delete.
+        for (EntityV1 entity: receivedEntities) {
+            producer.sendNewRequest( buildDeleteEntityRequest(entity) );
+        }
+    }
+
+    public DeleteEntityRequestV1 buildDeleteEntityRequest(EntityV1 entity) {
+        return DeleteEntityRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(System.currentTimeMillis())
+                .setEntityTypeName(entity.getEntityTypeName())
+                .setEntitySubdomainName(entity.getEntitySubdomainName())
+                .setEntityIdInSubdomain(entity.getEntityIdInSubdomain())
+                .build();
     }
 
     @When("^I send CreateEntityRequest with SourceAlarm \"([^\"]*)\"$")
