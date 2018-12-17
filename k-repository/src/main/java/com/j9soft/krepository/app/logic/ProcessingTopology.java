@@ -1,6 +1,7 @@
 package com.j9soft.krepository.app.logic;
 
 import com.j9soft.krepository.app.config.KRepositoryConfig;
+import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.confluent.kafka.serializers.subject.RecordNameStrategy;
@@ -61,7 +62,7 @@ public class ProcessingTopology {
         final Serde<SpecificRecord> commandSerde = new SpecificAvroSerde<>();
         commandSerde.configure(serdeConfig, false); // `false` for record values
         //
-        final Serde<SpecificRecord> entitySerde = new SpecificAvroSerde<>();
+        final Serde<EntityV1> entitySerde = new SpecificAvroSerde<>();
         commandSerde.configure(serdeConfig, false); // `false` for record values
 
         // Let's prepare our k-streams processing Topology:
@@ -90,12 +91,12 @@ public class ProcessingTopology {
         //
         // @TODO You must provide a name for the table (more precisely, for the internal state store that backs the table). This is required for supporting interactive queries against the table. When a name is not provided the table will not queryable and an internal name will be provided for the state store.
         //
-        KTable<String, SpecificRecord> currentEntitiesTable = builder.table( config.getEntitiesTopicName(),
+        KTable<String, EntityV1> currentEntitiesTable = builder.table( config.getEntitiesTopicName(),
                 Consumed.with(keySerde, entitySerde));
 
         // For every received Let's perform lookup
         //
-        KStream<String, SpecificRecord> newEntitiesStream =
+        KStream<String, EntityV1> newEntitiesStream =
                 // https://kafka.apache.org/21/documentation/streams/developer-guide/dsl-api
                 // "KTable also provides an ability to look up current values of data records by keys.
                 //  This table-lookup functionality is available through join operations
