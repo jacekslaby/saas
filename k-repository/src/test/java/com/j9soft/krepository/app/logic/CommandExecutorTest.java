@@ -3,7 +3,7 @@ package com.j9soft.krepository.app.logic;
 import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
-import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.specific.SpecificRecord;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,7 +44,7 @@ public class CommandExecutorTest {
                 .build();
 
         // Dummy value.
-        GenericRecord currentEntityValue = null;
+        SpecificRecord currentEntityValue = null;
 
         EntityV1 resultEntity = commandExecutor.apply(uknownRequest, currentEntityValue);
 
@@ -58,7 +58,7 @@ public class CommandExecutorTest {
         CreateEntityRequestV1 command = prepareCreateEntityRequest();
 
         // We provide null to indicate that this entity does not exist.
-        GenericRecord currentEntityValue = null;
+        SpecificRecord currentEntityValue = null;
 
         EntityV1 resultEntity = commandExecutor.apply(command, currentEntityValue);
 
@@ -76,7 +76,7 @@ public class CommandExecutorTest {
         CreateEntityRequestV1 command = prepareCreateEntityRequest();
 
         // We provide current value.
-        GenericRecord currentEntityValue = prepareEntity();
+        SpecificRecord currentEntityValue = prepareEntity();
 
         EntityV1 resultEntity = commandExecutor.apply(command, currentEntityValue);
 
@@ -90,7 +90,7 @@ public class CommandExecutorTest {
         DeleteEntityRequestV1 command = prepareDeleteEntityRequest();
 
         // We provide current value.
-        GenericRecord currentEntityValue = prepareEntity();
+        SpecificRecord currentEntityValue = prepareEntity();
 
         EntityV1 resultEntity = commandExecutor.apply(command, currentEntityValue);
 
@@ -105,7 +105,7 @@ public class CommandExecutorTest {
         DeleteEntityRequestV1 command = prepareDeleteEntityRequest();
 
         // We provide null to indicate that this entity does not exist.
-        GenericRecord currentEntityValue = null;
+        SpecificRecord currentEntityValue = null;
 
         EntityV1 resultEntity = commandExecutor.apply(command, currentEntityValue);
 
