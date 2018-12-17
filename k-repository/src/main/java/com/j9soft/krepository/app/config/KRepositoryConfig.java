@@ -92,6 +92,7 @@ public class KRepositoryConfig {
         props.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
                 LogAndContinueExceptionHandler.class.getName());
 
+        // @TODO Replication should be 3. (in order to support one failure during an ongoing maintenance of one broker)
         props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 1);
 
         return props;
