@@ -32,6 +32,7 @@ public class ProcessingTopology {
     @Autowired
     public ProcessingTopology(KRepositoryConfig config) {
         this.config = config;
+        Map<String, String> avroSerdeConfig = prepareConfigPropertiesOfAvroSerde();
 
         // Let's prepare serializers/deserializers to be used when reading from and writing to topics.
         //
@@ -39,31 +40,12 @@ public class ProcessingTopology {
         //
         // Our key is just the same string as in property entity_id_in_subdomain.
         final Serde<String> keySerde = Serdes.String();
-
-        // Our values encoded as AVRO schemas so we need to configure a Serde.
         //
-        final Map<String, String> serdeConfig = new HashMap<>();
-        serdeConfig.put("schema.registry.url", config.getSchemaRegistryUrl());
-        // We have may types (avro schemas) used on both topics,
-        //  so we need to tell the serializers/deserializers that fact.
-        // (see also:
-        //   http://martin.kleppmann.com/2018/01/18/event-types-in-kafka-topic.html
-        //     serdeConfig.put("value.subject.name.strategy", "io.confluent.kafka.serializers.subject.RecordNameStrategy");
-        //   https://stackoverflow.com/questions/51429759/multiple-message-types-in-a-single-kafka-topic-with-avro
-        //     "I haven't seen any working example of this. Not even a single one."
-        // )
-        serdeConfig.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
+        // @TODO Entities topic needs avro serde
         //
-        // We want to receive POJOs, so we cannot use GenericAvroSerde. Instead we have:
-        //  (see also: https://dzone.com/articles/kafka-avro-serialization-and-the-schema-registry
-        //    https://stackoverflow.com/questions/31207768/generic-conversion-from-pojo-to-avro-record
-        //  )
-        serdeConfig.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
-        final Serde<SpecificRecord> commandSerde = new SpecificAvroSerde<>();
-        commandSerde.configure(serdeConfig, false); // `false` for record values
-        //
-        final Serde<EntityV1> entitySerde = new SpecificAvroSerde<>();
-        commandSerde.configure(serdeConfig, false); // `false` for record values
+        // Topics have messages with different values, so we need different Serdes.
+        final Serde<SpecificRecord> commandSerde = createValueSerde(avroSerdeConfig); // SpecificRecord because this topic has different classes as values
+        final Serde<EntityV1> entitySerde = createValueSerde(avroSerdeConfig);
 
         // Let's prepare our k-streams processing Topology:
         //  v1-commands-topic -> join -> store (KTable based on v1-entities-topic)
@@ -129,12 +111,52 @@ public class ProcessingTopology {
         streams.start();
     }
 
-    /*
-    najprościej będzie to zaimplementować w KStreams.
+    private static <T extends SpecificRecord> Serde<T> createValueSerde(Map<String, String> avroSerdeConfig) {
+        final Serde<T> newSerde = new SpecificAvroSerde<T>();
+        //
+        // We must call configure.
+        // (see also https://github.com/confluentinc/kafka-streams-examples/blob/5.0.1-post/src/test/java/io/confluent/examples/streams/SpecificAvroIntegrationTest.java )
+        newSerde.configure(avroSerdeConfig, false); // `false` for record values
 
-Ale dopisać że efektywniejsze będzie zrobić samemu, zgodnie z:
-https://aseigneurin.github.io/2017/08/04/why-kafka-streams-didnt-work-for-us-part-3.html
-bo: nie będzie tych zbędnych topic'ów.
+        return newSerde;
+    }
+
+    private Map<String, String> prepareConfigPropertiesOfAvroSerde() {
+
+        // Our values encoded as AVRO schemas so we need to configure a Serde with an access to Schema Registry.
+        //
+        final Map<String, String> serdeConfig = new HashMap<>();
+        serdeConfig.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, config.getSchemaRegistryUrl());
+        //
+        // @TODO Remove auto=true when scripts registering schemas are ready.
+        serdeConfig.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "true");
+        //
+        // We have may several types (avro schemas) used on both topics,
+        //  so we need to tell the serializers/deserializers that fact.
+        // (see also:
+        //   http://martin.kleppmann.com/2018/01/18/event-types-in-kafka-topic.html
+        //     serdeConfig.put("value.subject.name.strategy", "io.confluent.kafka.serializers.subject.RecordNameStrategy");
+        //   https://stackoverflow.com/questions/51429759/multiple-message-types-in-a-single-kafka-topic-with-avro
+        //     "I haven't seen any working example of this. Not even a single one."
+        // )
+        serdeConfig.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
+        //
+        // We want to receive POJOs, so we cannot use GenericAvroSerde. Instead we have:
+        //  (see also: https://dzone.com/articles/kafka-avro-serialization-and-the-schema-registry
+        //    https://stackoverflow.com/questions/31207768/generic-conversion-from-pojo-to-avro-record
+        //  )
+        serdeConfig.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
+
+        return serdeConfig;
+    }
+
+    /*
+    Note: Current implementation, provided above, is made using Kafka Streams.
+      It is well enough for PoC (and it was much quicker to develop),
+       but for the production code we would prefer use Processor API
+       in order to decrease resource usage.
+
+       see more: https://aseigneurin.github.io/2017/08/04/why-kafka-streams-didnt-work-for-us-part-3.html
 
     public ProcessingTopology() {
 
