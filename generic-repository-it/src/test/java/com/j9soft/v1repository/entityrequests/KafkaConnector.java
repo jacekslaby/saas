@@ -110,8 +110,8 @@ public class KafkaConnector {
         // Consumer configuration.
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, GRIT_BOOTSTRAP_SERVERS);
-        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "generic-repository-it-producer");
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "generic-repository-it-producer");
+        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "generic-repository-it-consumer");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "generic-repository-it-consumer");
         consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
         consumerProps.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

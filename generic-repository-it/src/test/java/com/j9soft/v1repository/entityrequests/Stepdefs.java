@@ -114,10 +114,10 @@ public class Stepdefs {
 
         receivedEntities = consumer.pollAllExistingEntities();
 
-        // @TODO remove below lines in order to do a real check
-        receivedEntities = new ArrayList<>();
-        receivedEntities.add( SourceAlarms.A.buildEntity() );
-        receivedEntities.add( SourceAlarms.B.buildEntity() );
+//        // @TODO remove below lines in order to do a real check
+//        receivedEntities = new ArrayList<>();
+//        receivedEntities.add( SourceAlarms.A.buildEntity() );
+//        receivedEntities.add( SourceAlarms.B.buildEntity() );
     }
 
     @When("^I send UknownEntityRequest I should receive exception$")
@@ -139,6 +139,10 @@ public class Stepdefs {
         // Cleanup - close the producer.
         if (this.producer != null) {
             this.producer.close();
+        }
+        // Cleanup - close the consumer.
+        if (this.consumer != null) {
+            this.consumer.close();
         }
     }
 }

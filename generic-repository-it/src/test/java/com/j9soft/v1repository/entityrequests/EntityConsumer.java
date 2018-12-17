@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public class EntityConsumer {
-    private static final Logger logger = LoggerFactory.getLogger(RequestProducer.class);
+    private static final Logger logger = LoggerFactory.getLogger(EntityConsumer.class);
 
     private String topicName;
     private KafkaConsumer<String, EntityV1> consumer;
@@ -54,6 +54,8 @@ public class EntityConsumer {
      */
     public List<EntityV1> pollAllExistingEntities() {
 
+        logger.info("pollAllExistingEntities: start");
+
         this.consumer.seekToBeginning( this.consumer.assignment() );
 
         List<EntityV1> resultList = new ArrayList<>();
@@ -62,7 +64,9 @@ public class EntityConsumer {
         Map<String, Integer> positions = new HashMap<>();
 
 
-        ConsumerRecords<String, EntityV1> records = consumer.poll(Duration.ofSeconds(2));
+        ConsumerRecords<String, EntityV1> records = consumer.poll(Duration.ofSeconds(5));
+        logger.info("pollAllExistingEntities: records.count={}", records.count());
+
         for (ConsumerRecord<String, EntityV1> record : records) {
             String key = record.key();
             EntityV1 value = record.value();
@@ -89,6 +93,15 @@ public class EntityConsumer {
                 result.add(entity);
             }
         }
+
+        logger.info("pollAllExistingEntities: result.size={}", result.size());
+
         return result;
+    }
+
+    public void close() {
+        if (this.consumer != null) {
+            this.consumer.close();
+        }
     }
 }
