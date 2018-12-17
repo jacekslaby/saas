@@ -22,34 +22,6 @@ public class CommandExecutor implements ValueJoiner<SpecificRecord, SpecificReco
 
     private static final Logger logger = LoggerFactory.getLogger(CommandExecutor.class);
 
-    // Dedicated value returned when unsupported command was received.
-    public static final EntityV1 UKNOWN_ENTITY_TO_BE_IGNORED = EntityV1.newBuilder()
-            .setUuid("dummy")
-            .setEntryDate(System.currentTimeMillis())
-            .setEntityTypeName("dummy")
-            .setEntitySubdomainName("dummy")
-            .setEntityIdInSubdomain("UKNOWN_ENTITY_TO_BE_IGNORED")
-            .build();
-
-    // Dedicated value returned when a create command was received for already existing entity.
-    public static final EntityV1 ALREADY_EXISTING_ENTITY_TO_BE_IGNORED = EntityV1.newBuilder()
-            .setUuid("dummy")
-            .setEntryDate(System.currentTimeMillis())
-            .setEntityTypeName("dummy")
-            .setEntitySubdomainName("dummy")
-            .setEntityIdInSubdomain("ALREADY_EXISTING_ENTITY_TO_BE_IGNORED")
-            .build();
-
-    // Dedicated value returned when a delete command was received for not existing entity.
-    public static final EntityV1 NOT_EXISTING_ENTITY_TO_BE_IGNORED = EntityV1.newBuilder()
-            .setUuid("dummy")
-            .setEntryDate(System.currentTimeMillis())
-            .setEntityTypeName("dummy")
-            .setEntitySubdomainName("dummy")
-            .setEntityIdInSubdomain("NOT_EXISTING_ENTITY_TO_BE_IGNORED")
-            .build();
-
-
     @Override
     public EntityV1 apply(SpecificRecord command, SpecificRecord currentEntityValue) {
 
@@ -68,7 +40,7 @@ public class CommandExecutor implements ValueJoiner<SpecificRecord, SpecificReco
 
         } else {
             logger.info("CommandExecutor.apply: Uknown request '{}'. Command ignored.", commandTypeName);
-            return UKNOWN_ENTITY_TO_BE_IGNORED;
+            return SpecialMarkers.UKNOWN_ENTITY_TO_BE_IGNORED;
         }
     }
 
@@ -77,7 +49,7 @@ public class CommandExecutor implements ValueJoiner<SpecificRecord, SpecificReco
 
             // We do not change the already existing entity.  (btw: there is PutEntityRequest for this)
             logger.info("CommandExecutor.apply: Already existing entity. Command ignored.");
-            return ALREADY_EXISTING_ENTITY_TO_BE_IGNORED;
+            return SpecialMarkers.ALREADY_EXISTING_ENTITY_TO_BE_IGNORED;
 
         } else {
             // We need to create a new entity.
@@ -96,7 +68,7 @@ public class CommandExecutor implements ValueJoiner<SpecificRecord, SpecificReco
         } else {
             // We do not do anything for the already not existing entity.
             logger.info("CommandExecutor.apply: Not existing entity. Command ignored.");
-            return NOT_EXISTING_ENTITY_TO_BE_IGNORED;
+            return SpecialMarkers.NOT_EXISTING_ENTITY_TO_BE_IGNORED;
         }
     }
 

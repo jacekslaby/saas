@@ -48,7 +48,7 @@ public class CommandExecutorTest {
 
         EntityV1 resultEntity = commandExecutor.apply(uknownRequest, currentEntityValue);
 
-        assertSame(CommandExecutor.UKNOWN_ENTITY_TO_BE_IGNORED, resultEntity);
+        assertSame(SpecialMarkers.UKNOWN_ENTITY_TO_BE_IGNORED, resultEntity);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class CommandExecutorTest {
 
         EntityV1 resultEntity = commandExecutor.apply(command, currentEntityValue);
 
-        assertSame(CommandExecutor.ALREADY_EXISTING_ENTITY_TO_BE_IGNORED, resultEntity);
+        assertSame(SpecialMarkers.ALREADY_EXISTING_ENTITY_TO_BE_IGNORED, resultEntity);
     }
 
     @Test
@@ -109,7 +109,7 @@ public class CommandExecutorTest {
 
         EntityV1 resultEntity = commandExecutor.apply(command, currentEntityValue);
 
-        assertSame(CommandExecutor.NOT_EXISTING_ENTITY_TO_BE_IGNORED, resultEntity);
+        assertSame(SpecialMarkers.NOT_EXISTING_ENTITY_TO_BE_IGNORED, resultEntity);
     }
 
     private CreateEntityRequestV1 prepareCreateEntityRequest() {

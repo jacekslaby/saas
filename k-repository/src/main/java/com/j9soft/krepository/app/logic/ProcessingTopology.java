@@ -41,8 +41,8 @@ public class ProcessingTopology {
         // Our key is just the same string as in property entity_id_in_subdomain.
         final Serde<String> keySerde = Serdes.String();
         //
-        // @TODO Entities topic needs avro serde
-        //
+        // @FUTURE Entities topic needs avro serde for keys.
+
         // Topics have messages with different values, so we need different Serdes.
         final Serde<SpecificRecord> commandSerde = createValueSerde(avroSerdeConfig); // SpecificRecord because this topic has different classes as values
         final Serde<EntityV1> entitySerde = createValueSerde(avroSerdeConfig);
@@ -91,16 +91,21 @@ public class ProcessingTopology {
                 commandsStream.leftJoin(currentEntitiesTable,
                         new CommandExecutor()); // the user-supplied ValueJoiner will be called to produce join output records.
 
-        // @ TODO on entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain
+        // @FUTURE on entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain
 
         // Publish the new values to the same topic, v1-entities-topic.
+        // (but first, via flatMap(), we need to:
+        //      - ignore some values (e.g. ALREADY_EXISTING_ENTITY_TO_BE_IGNORED)
+        //      - and change key to entity_id_in_subdomain. (because logically v1-entities-topic is used as a compacted topic)
         //
         // Note: This is only a draft implementation. It does not guarantee consistency
         //  as our oldEntitiesTable may be delayed.  (i.e. the latest state of an entity may not be in memory yet)
-        // @TODO The target implementation needs to be done using local state store.
+        // @FUTURE The target implementation needs to be done using a local state store.
         //   (and using Processor API - in order to avoid significant overhead introduced by KStreams (i.e. those lots of intermediate topics))
         //
-        newEntitiesStream.to(config.getEntitiesTopicName(), Produced.with(keySerde, entitySerde));
+        newEntitiesStream
+                .flatMap(new EntityKeyValueMapper())
+                .to(config.getEntitiesTopicName(), Produced.with(keySerde, entitySerde));
 
         // Start the Kafka Streams threads
         //
