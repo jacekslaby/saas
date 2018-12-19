@@ -13,8 +13,8 @@
 #
 docker-compose --file src/test/resources/docker-compose.yml up -d zookeeper
 docker-compose --file src/test/resources/docker-compose.yml up -d kafka
-docker-compose --file src/test/resources/docker-compose.yml  run --rm  k-repository-schemas
 docker-compose --file src/test/resources/docker-compose.yml up -d schema-registry
+docker-compose --file src/test/resources/docker-compose.yml  run --rm  k-repository-schemas
 
 # ALTERNATIVE: docker run -it --rm confluentinc/cp-enterprise-kafka:5.0.1
 
