@@ -91,13 +91,6 @@
       <version>5.0.0</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>1.7.25</version>
-      <scope>test</scope>
-    </dependency>
-
   </dependencies>
   
   <build>
@@ -182,6 +175,21 @@
         </configuration>
       </plugin>
       
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>.</directory>
+              <includes>
+                <include>**/*.log</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
     </plugins>
     
   </build>
