@@ -32,20 +32,23 @@ public class RequestProducer {
 
         logger.info("RequestUuid:{} - sendNewRequest(CreateEntityRequestV1)", request.getUuid());
 
-        ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
+        ProducerRecord<String, Object> record = new ProducerRecord<>(
+                this.topicName, request.getEntityIdInSubdomain().toString(), request);
         this.producer.send(record).get();
     }
 
     public void sendNewRequest(DeleteEntityRequestV1 request) throws ExecutionException, InterruptedException {
         logger.info("RequestUuid:{} - sendNewRequest(DeleteEntityRequestV1)", request.getUuid());
 
-        ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
+        ProducerRecord<String, Object> record = new ProducerRecord<>(
+                this.topicName, request.getEntityIdInSubdomain().toString(), request);
         this.producer.send(record).get();
     }
 
     public void sendNewRequest(ResyncAllStartSubdomainRequestV1 request) throws ExecutionException, InterruptedException {
         logger.info("RequestUuid:{} - sendNewRequest(ResyncAllStartSubdomainRequestV1)", request.getUuid());
 
+        // @TODO send to every partition, with key "dummy"
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record).get();
     }
@@ -53,6 +56,7 @@ public class RequestProducer {
     public void sendNewRequest(ResyncAllEndSubdomainRequestV1 request) throws ExecutionException, InterruptedException {
         logger.info("RequestUuid:{} - sendNewRequest(ResyncAllEndSubdomainRequestV1)", request.getUuid());
 
+        // @TODO send to every partition, with key "dummy"
         ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
         this.producer.send(record).get();
     }

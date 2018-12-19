@@ -7,8 +7,7 @@ import org.apache.kafka.streams.kstream.KeyValueMapper;
 import java.util.Collections;
 
 /**
- * Logic to build new key for an Entity
- *  and to ignore some special Entity objects.
+ * Logic to ignore some special Entity objects.
  *
  * Logic is implemented as KeyValueMapper because it is used in KStreams processing.
  * See also:
@@ -19,13 +18,13 @@ import java.util.Collections;
 public class EntityKeyValueMapper implements KeyValueMapper<String, EntityV1, Iterable<KeyValue<String, EntityV1>>> {
 
     @Override
-    public Iterable<KeyValue<String, EntityV1>> apply(String oldKeyContainsRequestUuid, EntityV1 entityV1) {
+    public Iterable<KeyValue<String, EntityV1>> apply(String oldKey, EntityV1 entityV1) {
 
         if (SpecialMarkers.checkIfEntityShouldBeIgnored(entityV1)) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         return Collections.singletonList(
-                new KeyValue(entityV1.getEntityIdInSubdomain().toString(), entityV1) );
+                new KeyValue<>(oldKey, entityV1) );
     }
 }
