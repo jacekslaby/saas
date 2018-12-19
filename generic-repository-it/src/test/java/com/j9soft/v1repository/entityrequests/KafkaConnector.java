@@ -93,7 +93,7 @@ public class KafkaConnector {
         // )
         producerProps.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
         // btw: Default is 'auto register schemas=true' so we need to put 'false' in order to discover uknown schemas.
-        // @TODO Uncomment this when a script to register schemas is available.
+        // @TODO Uncomment this when a script to register schemas is available.  (BUT we have our unknown schema, so rather auto true must stay ??)
         //producerProps.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false");
 
         // Create a new producer instance.
@@ -116,6 +116,7 @@ public class KafkaConnector {
         consumerProps.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumerProps.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, GRIT_SCHEMA_REGISTRY_URL);
+        consumerProps.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
         consumerProps.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);

@@ -10,7 +10,10 @@
 # Current approach: each required service provides its own Dockerfile.
 
 # Generates the images in Docker
-cd ../generic-repository/
+cd ../k-repository-schemas/
+mvn docker:build
+
+cd ../k-repository/
 mvn clean package docker:build
 
 cd ../generic-repository-it/

@@ -86,7 +86,9 @@ public class ProcessingTopology {
                 //  leftJoin:
                 //  Performs a LEFT JOIN of this stream with the table, effectively doing a table lookup.
                 //  Input records with a null key or a null value are ignored and do not trigger the join."
-                // Note: because of the above we must assure that also subdomain requests have a key.
+                //
+                // Note: because of the above we must assure that also subdomain requests have a key. (it is enough to be not null)
+                // Note: key of messages with entity requests must contain entity_id_in_subdomain ! (otherwise join does not work)
                 //
                 commandsStream.leftJoin(currentEntitiesTable,
                         new CommandExecutor()); // the user-supplied ValueJoiner will be called to produce join output records.
@@ -133,8 +135,8 @@ public class ProcessingTopology {
         final Map<String, String> serdeConfig = new HashMap<>();
         serdeConfig.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, config.getSchemaRegistryUrl());
         //
-        // @TODO Remove auto=true when scripts registering schemas are ready.
-        serdeConfig.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "true");
+        // We do not want to auto register schemas. The schemas are registered by maintenance scripts launched directly against kafka cluster.
+        serdeConfig.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false");
         //
         // We have may several types (avro schemas) used on both topics,
         //  so we need to tell the serializers/deserializers that fact.
