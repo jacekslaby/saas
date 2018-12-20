@@ -18,6 +18,6 @@ WORKDIR /tmp/
 CMD ["mvn", "verify"]
 
 # Note: In order to speedup a build you may provide a re-used volume where maven will store downloaded dependencies, e.g.:
-# docker run --mount source=maven_repository,target=/root/.m2  j9soft/generic-repository-it:latest
+# docker run --mount source=maven_repository,target=/root/.m2  j9soft/k-repository-it:latest
 #
 # See also: https://github.com/carlossg/docker-maven

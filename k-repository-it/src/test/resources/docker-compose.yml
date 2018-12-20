@@ -77,9 +77,9 @@ services:
     networks:
       - kafka_backend_net
       
-  # @TODO rename generic-repository-it to k-repository-it
-  generic-repository-it:
-    image: j9soft/generic-repository-it:latest
+  # @TODO rename k-repository-it to k-repository-it
+  k-repository-it:
+    image: j9soft/k-repository-it:latest
     depends_on:
       - kafka
       - schema-registry
@@ -95,7 +95,7 @@ services:
       GRIT_BOOTSTRAP_SERVERS: kafka:29092
       GRIT_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       GRIT_REPOSITORY_NAME: prodxphone-saas
-      # @TODO rename GRIT_ TO KRIT_ after renaming generic-repository-it to k-repository-it
+      # @TODO rename GRIT_ TO KRIT_ after renaming k-repository-it to k-repository-it
       
 volumes:
   maven_repository:

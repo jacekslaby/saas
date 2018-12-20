@@ -31,14 +31,14 @@ sleep 30
 
 # Run our integration tests
 #
-#docker-compose --file src/test/resources/docker-compose.yml  run generic-repository-it
-docker-compose --file src/test/resources/docker-compose.yml  run --rm  generic-repository-it
+#docker-compose --file src/test/resources/docker-compose.yml  run k-repository-it
+docker-compose --file src/test/resources/docker-compose.yml  run --rm  k-repository-it
 #
 # ( For environement debugging:
-#     docker-compose --file src/test/resources/docker-compose.yml  run --rm --entrypoint bash generic-repository-it
+#     docker-compose --file src/test/resources/docker-compose.yml  run --rm --entrypoint bash k-repository-it
 # )
 # ( Run our integration tests - Alternative with a docker command:
-#    docker run -it --rm --mount source=maven_repository,target=/root/.m2  j9soft/generic-repository-it:latest
+#    docker run -it --rm --mount source=maven_repository,target=/root/.m2  j9soft/k-repository-it:latest
 # )
 
 # Stop all the services

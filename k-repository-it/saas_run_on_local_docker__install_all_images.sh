@@ -16,7 +16,7 @@ mvn docker:build
 cd ../k-repository/
 mvn clean package docker:build
 
-cd ../generic-repository-it/
+cd ../k-repository-it/
 mvn clean docker:build
 #
 # btw: We cannot use the following because it launches the goal `failsafe:integration-test` and we do not want to run our ITs in this moment.

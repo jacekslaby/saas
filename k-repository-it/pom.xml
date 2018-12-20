@@ -2,13 +2,13 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.j9soft.saas.alarms</groupId>
-  <artifactId>generic-repository-it</artifactId>
+  <artifactId>k-repository-it</artifactId>
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
   
-  <name>generic-repository-it</name>
+  <name>k-repository-it</name>
   <description>
-    The Generic Repository IT provides Integration Test (IT) scenarios for a Source Active Alarms Store, making it easy to
+    The K-Repository IT provides Integration Test (IT) scenarios for a Source Active Alarms Store, making it easy to
     verify its correctness, using the native Kafka protocol.
   </description>
 

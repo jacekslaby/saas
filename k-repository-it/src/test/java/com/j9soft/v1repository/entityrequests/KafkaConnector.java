@@ -41,7 +41,7 @@ public class KafkaConnector {
         //  )
         /*  (Hm.... probably easier is to just do:
                mvn docker:build
-               docker-compose --file src/test/resources/docker-compose.yml  run --rm  generic-repository-it
+               docker-compose --file src/test/resources/docker-compose.yml  run --rm  k-repository-it
 
         //   It is a bit longer, but much simpler.  (the trouble is that we loose IDE help, e.g. exception stack trace navigation...)
         //  )
@@ -75,7 +75,7 @@ public class KafkaConnector {
         // Producer configuration.
         Properties producerProps = new Properties();
         producerProps.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, GRIT_BOOTSTRAP_SERVERS);
-        producerProps.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "generic-repository-it-producer");
+        producerProps.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "k-repository-it-producer");
         //
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         //
@@ -110,8 +110,8 @@ public class KafkaConnector {
         // Consumer configuration.
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, GRIT_BOOTSTRAP_SERVERS);
-        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "generic-repository-it-consumer");
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "generic-repository-it-consumer");
+        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "k-repository-it-consumer");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "k-repository-it-consumer");
         consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
         consumerProps.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
