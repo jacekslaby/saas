@@ -56,8 +56,14 @@ services:
 
   k-repository-schemas:
     image: j9soft/k-repository-schemas:latest
+    container_name: k-repository-schemas
     depends_on:
       - schema-registry
+    volumes:
+      # on every run we want to re-use libraries previously downloaded by maven as dependencies
+      - type: volume
+        source: maven_repository
+        target: /root/.m2
     environment:
       KRS_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
     networks:
@@ -65,11 +71,11 @@ services:
       
   k-repository:
     image: j9soft/k-repository:latest
+    container_name: k-repository
     depends_on:
       - zookeeper
       - kafka
       - schema-registry
-      - k-repository-schemas
     environment:
       KR_BOOTSTRAP_SERVERS: kafka:9092
       KR_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"

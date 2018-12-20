@@ -14,21 +14,36 @@
 docker-compose up -d zookeeper
 docker-compose up -d kafka
 docker-compose up -d schema-registry
-docker-compose run --rm  k-repository-schemas
 
 # ALTERNATIVE: docker run -it --rm confluentinc/cp-enterprise-kafka:5.0.1
+#  BUT it does not provide automatic topic creation.
+#  So, we use wurstmeister/kafka.
+#
 
-# Note: Topics required by k-repository are auto created in image 'kafka'.
-# (Note: in Production of course a different configuration is needed, e.g. number of partitions depending on network size.)
+# Note: Topics required by k-repository are auto created in service 'kafka'. (Image wurstmeister/kafka provides such functionality.)
+# (Note: in Production of course a different configuration is needed, e.g. number of topic partitions is different and depends on the telco network size.)
 #
 
 
-# Waits for service to start  @TODO probably not needed ?
+# Let's register Avro schemas.  
+#
+#  (We do not need the container to hang around, so we use 'run' instead of 'up'. 
+#   AND we want to see the output:
+#   [INFO] Registered subject(com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1) with id 1 version 1
+#   [INFO] Registered subject(com.j9soft.krepository.v1.entitiesmodel.EntityV1) with id 2 version 1
+#   [INFO] Registered subject ... etc.
+#   [INFO] ------------------------------------------------------------------------
+#   [INFO] BUILD SUCCESS
+#  )
+docker-compose run --rm  k-repository-schemas
+
+# Waits for service to start and to be configured.
+#   @TODO probably not needed ?
 sleep 30
 
 # Run our application
 #
-docker-compose up -d k-repository-it
+docker-compose up -d k-repository
 
 # Run our integration tests
 #
