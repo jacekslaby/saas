@@ -98,7 +98,7 @@ services:
     networks:
       - kafka_backend_net
     environment:
-      GRIT_BOOTSTRAP_SERVERS: kafka:29092
+      GRIT_BOOTSTRAP_SERVERS: kafka:9092
       GRIT_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       GRIT_REPOSITORY_NAME: prodxphone-saas
       # @TODO rename GRIT_ TO KRIT_ after renaming k-repository-it to k-repository-it
