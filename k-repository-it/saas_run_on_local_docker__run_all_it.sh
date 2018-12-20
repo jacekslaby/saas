@@ -42,6 +42,7 @@ docker-compose run --rm  k-repository-schemas
 sleep 30
 
 # Run our application
+#    (Note: in case of a debug:  docker-compose run --rm --entrypoint sh k-repository  , followed by: java -jar k-repository.jar )
 #
 docker-compose up -d k-repository
 

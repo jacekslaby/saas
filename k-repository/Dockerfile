@@ -1,4 +1,9 @@
-FROM openjdk:8-jre-alpine
+# We need to work around openjdk:8u151-jre-alpine lacking some libs.
+# ( https://stackoverflow.com/questions/51368650/kafka-streams-allmetadata-returns-empty-list-in-docker-interactive-queries            Using this approach, i.e. anapsix/alpine-java
+#   https://issues.apache.org/jira/browse/KAFKA-4988
+#   https://stackoverflow.com/questions/50288034/unsatisfiedlinkerror-tmp-snappy-1-1-4-libsnappyjava-so-error-loading-shared-li        Did not work.
+# )
+FROM anapsix/alpine-java:8u192b12_server-jre
 
 WORKDIR /app
 
