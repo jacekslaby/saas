@@ -1,13 +1,19 @@
-# K-Repository schemas (PoC)
+# K-Repository Schemas (PoC)
 
-The K-Repository schemas provides a logic to load Avro schemas (used on Kafka topics by K-Repository)
+The K-Repository Schemas provides a logic to load Avro schemas (used on Kafka topics by K-Repository)
 into designated Schema Registry.
 
 
 ## Getting Started
 
 ```
-k-repository-schemas> mvn schema-registry:register
+# (assure that 'schema-registry' points to your `docker-machine ip`, e.g. 192.168.99.100 on virtualbox
+# e.g. by adding to hosts file)
+
+# Setup the environment
+set KRS_SCHEMA_REGISTRY_URL="http://schema-registry:8081"
+
+mvn schema-registry:register
 [INFO] Scanning for projects...
 [INFO]
 [INFO] ------------< com.j9soft.saas.alarms:k-repository-schemas >-------------
@@ -24,7 +30,7 @@ k-repository-schemas> mvn schema-registry:register
 [INFO] Finished at: 2018-12-19T15:15:19Z
 [INFO] ------------------------------------------------------------------------
 
-k-repository-schemas> mvn schema-registry:test-compatibility
+mvn schema-registry:test-compatibility
 [INFO] Scanning for projects...
 [INFO]
 [INFO] ------------< com.j9soft.saas.alarms:k-repository-schemas >-------------
