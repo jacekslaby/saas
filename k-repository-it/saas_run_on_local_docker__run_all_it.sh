@@ -11,14 +11,14 @@
 #   https://docs.confluent.io/current/installation/docker/docs/image-reference.html
 # )
 #
-docker-compose --file src/test/resources/docker-compose.yml up -d zookeeper
-docker-compose --file src/test/resources/docker-compose.yml up -d kafka
-docker-compose --file src/test/resources/docker-compose.yml up -d schema-registry
-docker-compose --file src/test/resources/docker-compose.yml  run --rm  k-repository-schemas
+docker-compose up -d zookeeper
+docker-compose up -d kafka
+docker-compose up -d schema-registry
+docker-compose run --rm  k-repository-schemas
 
 # ALTERNATIVE: docker run -it --rm confluentinc/cp-enterprise-kafka:5.0.1
 
-# Create topics required by k-repository.
+# Note: Topics required by k-repository are auto created in image 'kafka'.
 # (Note: in Production of course a different configuration is needed, e.g. number of partitions depending on network size.)
 #
 
@@ -27,20 +27,21 @@ docker-compose --file src/test/resources/docker-compose.yml  run --rm  k-reposit
 sleep 30
 
 # Run our application
-#@TODO docker-compose --file src/test/resources/docker-compose.yml  run saas-repository
+#
+docker-compose up -d k-repository-it
 
 # Run our integration tests
 #
-#docker-compose --file src/test/resources/docker-compose.yml  run k-repository-it
-docker-compose --file src/test/resources/docker-compose.yml  run --rm  k-repository-it
+docker-compose run --rm  k-repository-it
+
 #
 # ( For environement debugging:
-#     docker-compose --file src/test/resources/docker-compose.yml  run --rm --entrypoint bash k-repository-it
+#     docker-compose --file k-repository-it/src/test/resources/docker-compose.yml  run --rm --entrypoint bash k-repository-it
 # )
 # ( Run our integration tests - Alternative with a docker command:
 #    docker run -it --rm --mount source=maven_repository,target=/root/.m2  j9soft/k-repository-it:latest
 # )
 
 # Stop all the services
-docker-compose --file src/test/resources/docker-compose.yml down
+docker-compose down
 
