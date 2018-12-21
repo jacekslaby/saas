@@ -1,0 +1,6 @@
+{
+  "request_type": "DeleteAlarmRequest",
+  "request_content": {
+    "notification_identifier": "eric2g:south:34566"
+  }
+}

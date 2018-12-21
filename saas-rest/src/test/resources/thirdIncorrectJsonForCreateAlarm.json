@@ -1,0 +1,5 @@
+{
+  "request_type": "CreateAlarmRequest",
+  "request_content": {
+  }
+}

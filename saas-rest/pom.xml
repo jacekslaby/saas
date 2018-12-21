@@ -1,0 +1,252 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.j9soft.saas.alarms</groupId>
+  <artifactId>saas-rest</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  
+  <name>saas-rest</name>
+  <description>
+    The Saas REST Proxy provides a RESTful interface to a Source Active Alarms Store, making it easy to
+    produce Source Alarms without using the native Kafka protocol or clients.
+  </description>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.0.3.RELEASE</version>
+  </parent>
+
+  <repositories>
+    <repository>
+      <id>confluent</id>
+      <url>https://packages.confluent.io/maven/</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-test -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>5.0.7.RELEASE</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
+    <!--
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.25</version>
+      <scope>test</scope>
+    </dependency>
+    -->
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.jayway.jsonpath</groupId>
+      <artifactId>json-path</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>2.19.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
+    <!-- play with JWT tokens -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt</artifactId>
+      <version>0.9.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+    <!-- serialize Objects to JSON -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.9.6</version>
+    </dependency>
+
+    <!-- https://docs.spring.io/spring-boot/docs/current/reference/html/using-boot-devtools.html -->
+    <!-- runtime reload of newly compiled classes -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-devtools</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka -->
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_2.12</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_2.12</artifactId>
+      <version>2.0.0</version>
+      <classifier>test</classifier>
+      <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients -->
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>2.0.0</version>
+      <classifier>test</classifier>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>1.8.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.swagger</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <version>1.5.3</version>
+    </dependency>
+
+    <!-- https://groups.google.com/forum/#!topic/confluent-platform/Rnz0n1S7pLA
+         '5.0.0' - https://aseigneurin.github.io/2018/08/02/kafka-tutorial-4-avro-and-schema-registry.html
+         https://stackoverflow.com/questions/43488853/confluent-maven-repository-not-working#43489639
+    -->
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-avro-serializer</artifactId>
+      <version>5.0.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.openapitools/openapi-generator-maven-plugin -->
+    <dependency>
+      <groupId>org.openapitools</groupId>
+      <artifactId>openapi-generator-maven-plugin</artifactId>
+      <version>${openapi-generator-version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.8.5</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>3.11.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro-maven-plugin</artifactId>
+        <version>1.8.2</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>schema</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.3</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.6.0</version>
+        <configuration>
+          <mainClass>com.j9soft.saas.alarms.SaasApplication</mainClass>
+        </configuration>
+      </plugin>
+
+      <!-- Let's generate helper classes for our model. From OpenAPI yaml.
+           These classes are used to deserialize JSON body objects received by REST controller. -->
+      <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>${openapi-generator-version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/doc/openapi.yaml</inputSpec>
+              <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
+              <generatorName>spring</generatorName>   <!-- We need annotations from JSR 303 Bean Validation. See https://lmonkiewicz.com/programming/get-noticed-2017/spring-boot-rest-request-validation/ -->
+              <generateApis>false</generateApis>
+              <generateModelTests>false</generateModelTests>
+              <generateModelDocumentation>false</generateModelDocumentation>
+              <generateSupportingFiles>false</generateSupportingFiles>
+              <configOptions>
+                <sourceFolder>src/gen/java/main</sourceFolder>
+              </configOptions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- https://maven.apache.org/surefire/maven-failsafe-plugin/plugin-info.html -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.0.0-M1</version>
+      </plugin>
+    </plugins>
+    
+  </build>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <openapi-generator-version>3.3.4</openapi-generator-version>
+  </properties>
+
+</project>
