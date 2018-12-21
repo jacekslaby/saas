@@ -27,46 +27,50 @@ public class ProcessingTopology {
 
     public static final String LOCAL_STORE_NAME = "entities-store";
 
-    private KRepositoryConfig config;
-
     @Autowired
     public ProcessingTopology(KRepositoryConfig config) {
-        this.config = config;
-        Map<String, String> avroSerdeConfig = prepareConfigPropertiesOfAvroSerde();
+
+        Map<String, String> avroSerdeConfig = prepareConfigPropertiesOfAvroSerde( config.getSchemaRegistryUrl() );
 
         // Let's prepare serializers/deserializers to be used when reading from and writing to topics.
+        // ( https://docs.confluent.io/current/streams/developer-guide/datatypes.html#streams-developer-guide-serdes )
         //
-        // https://docs.confluent.io/current/streams/developer-guide/datatypes.html#streams-developer-guide-serdes
-        //
-        // Our key is just the same string as in property entity_id_in_subdomain.
+        // Our key is just the same string as in property 'entity_id_in_subdomain' of a request object. (e.g. NotificationIdentifier of a SourceAlarm)
         final Serde<String> keySerde = Serdes.String();
         //
+
         // @FUTURE Entities topic needs avro serde for keys.
+        // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
+        //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
+        //   use the same topics)
 
         // Topics have messages with different values, so we need different Serdes.
         final Serde<SpecificRecord> commandSerde = createValueSerde(avroSerdeConfig); // SpecificRecord because this topic has different classes as values
         final Serde<EntityV1> entitySerde = createValueSerde(avroSerdeConfig);
 
-        // Let's prepare our k-streams processing Topology:
-        //  v1-commands-topic -> join -> store (KTable based on v1-entities-topic)
-        //       to calculate a new entity (with attributes merged from value provided from v1-commands-topic and v1-entities-topic)
-        //  store -> calculate new entity value -> publish on v1-entities-topic
+        // Let's prepare our k-streams processing Topology as follows:
+        //  (input) v1-commands-topic -> join to the local store (which is implemented as a KTable based on v1-entities-topic)
+        //  join: During the join we calculate a new entity. (with attributes merged from value provided from v1-commands-topic and v1-entities-topic)
+        //  join -> update in the local store (what is automatically stored in v1-entities-topic by the KTable logic)
+        //  join -> publish on v1-entities-topic  (output)
+        //             (i.e. currently we do publish manually to v1-entities-topic,
+        //               but in the @FUTURE it will be automatically saved by a logic of the local store)
         //
         StreamsBuilder builder = new StreamsBuilder();
 
         // Input stream with requests to be executed on entities.
         // Based on: v1-commands-topic
-        // Key is entity_id_in_subdomain - this way
+        // Key is entity_id_in_subdomain - this way it is possible to join it with KTable based on v1-entities-topic.
         // (Note: for subdomain requests key must be not null,
-        //   but its value is irrelevant. (and producers must assure that a copy of every subdomain request
-        //    is published to every partition of v1-commands-topic, i.e. they should not use key based partitioner)
+        //   but key content is irrelevant. (additionally producers must assure that a copy of every subdomain request
+        //    is published to every partition of v1-commands-topic, i.e. they should not use a key based partitioner)
         //
         KStream<String, SpecificRecord> commandsStream = builder.stream( config.getCommandsTopicName(),
                 Consumed.with(keySerde, commandSerde));
 
         // Input table with current entity values.
         // Based on: v1-entities-topic
-        //
+        // Contains only some of the entities - only those from topic partitions relevant to this instance of k-repository app.
         // https://kafka.apache.org/21/documentation/streams/developer-guide/dsl-api
         // "the local KTable instance of every application instance will be populated with data
         //   from only a subset of the partitions of the input topic."
@@ -76,32 +80,28 @@ public class ProcessingTopology {
         KTable<String, EntityV1> currentEntitiesTable = builder.table( config.getEntitiesTopicName(),
                 Consumed.with(keySerde, entitySerde));
 
-        // For every received Let's perform lookup
+        // For every received request let's perform lookup for a current Entity value, i.e. a left join.
         //
         KStream<String, EntityV1> newEntitiesStream =
                 // https://kafka.apache.org/21/documentation/streams/developer-guide/dsl-api
                 // "KTable also provides an ability to look up current values of data records by keys.
                 //  This table-lookup functionality is available through join operations
-                //
                 //  leftJoin:
                 //  Performs a LEFT JOIN of this stream with the table, effectively doing a table lookup.
                 //  Input records with a null key or a null value are ignored and do not trigger the join."
                 //
-                // Note: because of the above we must assure that also subdomain requests have a key. (it is enough to be not null)
+                // Note: because of the above we must assure that also subdomain requests have a key. (although it is enough to be not null)
                 // Note: key of messages with entity requests must contain entity_id_in_subdomain ! (otherwise join does not work)
                 //
                 commandsStream.leftJoin(currentEntitiesTable,
-                        new CommandExecutor()); // the user-supplied ValueJoiner will be called to produce join output records.
+                        new CommandExecutor()); // the ValueJoiner is to produce join output records, i.e. the resulting Entity values.
 
-        // @FUTURE on entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain
-
-        // Publish the new values to the same topic, v1-entities-topic.
-        // (but first, via flatMap(), we need to:
-        //      - ignore some values (e.g. ALREADY_EXISTING_ENTITY_TO_BE_IGNORED)
-        //      - and change key to entity_id_in_subdomain. (because logically v1-entities-topic is used as a compacted topic)
+        // Publish the new Entity values to the same topic, v1-entities-topic.
+        // (but first, via flatMap(), we need to ignore some values (e.g. ALREADY_EXISTING_ENTITY_TO_BE_IGNORED)
         //
         // Note: This is only a draft implementation. It does not guarantee consistency
-        //  as our oldEntitiesTable may be delayed.  (i.e. the latest state of an entity may not be in memory yet)
+        //  as our currentEntitiesTable may be delayed.  (i.e. the latest state of an entity may not be in memory yet,
+        //    due to required cycle: publish + poll (receive) + update KTable.
         // @FUTURE The target implementation needs to be done using a local state store.
         //   (and using Processor API - in order to avoid significant overhead introduced by KStreams (i.e. those lots of intermediate topics))
         //
@@ -110,8 +110,7 @@ public class ProcessingTopology {
                 .to(config.getEntitiesTopicName(), Produced.with(keySerde, entitySerde));
 
         // Start the Kafka Streams threads
-        //
-        // https://kafka.apache.org/21/documentation/streams/developer-guide/write-streams.html
+        // ( https://kafka.apache.org/21/documentation/streams/developer-guide/write-streams.html )
         //
         Topology topology = builder.build();
         KafkaStreams streams = new KafkaStreams(topology, config.getStreamsProperties());
@@ -119,26 +118,26 @@ public class ProcessingTopology {
     }
 
     private static <T extends SpecificRecord> Serde<T> createValueSerde(Map<String, String> avroSerdeConfig) {
-        final Serde<T> newSerde = new SpecificAvroSerde<T>();
+        final Serde<T> newSerde = new SpecificAvroSerde<>();
         //
         // We must call configure.
         // (see also https://github.com/confluentinc/kafka-streams-examples/blob/5.0.1-post/src/test/java/io/confluent/examples/streams/SpecificAvroIntegrationTest.java )
-        newSerde.configure(avroSerdeConfig, false); // `false` for record values
+        newSerde.configure(avroSerdeConfig, false); // `false` because this Serde is for record/message values, not keys
 
         return newSerde;
     }
 
-    private Map<String, String> prepareConfigPropertiesOfAvroSerde() {
+    private Map<String, String> prepareConfigPropertiesOfAvroSerde(String schemaRegistryUrl) {
 
-        // Our values encoded as AVRO schemas so we need to configure a Serde with an access to Schema Registry.
+        // Our values are encoded as Avro schemas objects so we need to configure a Serde with an access to Schema Registry.
         //
         final Map<String, String> serdeConfig = new HashMap<>();
-        serdeConfig.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, config.getSchemaRegistryUrl());
-        //
-        // We do not want to auto register schemas. The schemas are registered by maintenance scripts launched directly against kafka cluster.
+        serdeConfig.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+
+        // We do not want to auto register schemas. The schemas are registered by maintenance scripts launched directly against Kafka cluster.
         serdeConfig.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false");
-        //
-        // We have may several types (avro schemas) used on both topics,
+
+        // We have may several types (i.e. Avro schemas) used on both topics,
         //  so we need to tell the serializers/deserializers that fact.
         // (see also:
         //   http://martin.kleppmann.com/2018/01/18/event-types-in-kafka-topic.html
@@ -147,23 +146,23 @@ public class ProcessingTopology {
         //     "I haven't seen any working example of this. Not even a single one."
         // )
         serdeConfig.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
-        //
-        // We want to receive POJOs, so we cannot use GenericAvroSerde. Instead we have:
+
+        // We want to receive POJOs (e.g. EntityV1), so we cannot use GenericAvroSerde.
         //  (see also: https://dzone.com/articles/kafka-avro-serialization-and-the-schema-registry
         //    https://stackoverflow.com/questions/31207768/generic-conversion-from-pojo-to-avro-record
         //  )
+        // Instead we have:
         serdeConfig.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
 
         return serdeConfig;
     }
 
     /*
-    Note: Current implementation, provided above, is made using Kafka Streams.
+    Note: Current implementation, provided above, is using Kafka Streams.
       It is well enough for PoC (and it was much quicker to develop),
-       but for the production code we would prefer use Processor API
-       in order to decrease resource usage.
-
-       see more: https://aseigneurin.github.io/2017/08/04/why-kafka-streams-didnt-work-for-us-part-3.html
+       but for the production code we would use Processor API in order to:
+        - decrease resource usage.  see more: https://aseigneurin.github.io/2017/08/04/why-kafka-streams-didnt-work-for-us-part-3.html
+       -  avoid stale reads from KTable due to publish+poll cycle)
 
     public ProcessingTopology() {
 
