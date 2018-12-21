@@ -4,7 +4,7 @@ The Saas REST Proxy provides a RESTful interface to a Source Active Alarms Store
 making it easy to produce Source Alarms without using the native Kafka protocol or clients.
 
 It provides the Command API ('C' from 'CQRS') for Source Active Alarms Store.
-The API is described in [OpenAPI spec](/jacekslaby/saas/src/doc/openapi.yaml) format.
+The API is described in [OpenAPI spec](/saas-rest-proxy/src/doc/openapi.yaml) format.
 
 ## Getting Started
 
@@ -16,7 +16,7 @@ mvn clean test
 
 ## Browsing API specification
 
-Open [Swagger Editor](https://editor.swagger.io/) and paste contents of [OpenAPI spec](/jacekslaby/saas/src/doc/openapi.yaml).
+Open [Swagger Editor](https://editor.swagger.io/) and paste contents of [OpenAPI spec](/saas-rest-proxy/src/doc/openapi.yaml).
 
 ## Test run without connecting to Kafka broker
 (i.e. with commands directed to nowhere)
