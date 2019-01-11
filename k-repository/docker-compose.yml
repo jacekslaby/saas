@@ -85,3 +85,6 @@ services:
       
 networks:
   kafka_backend_net:
+
+volumes:
+  maven_repository:
