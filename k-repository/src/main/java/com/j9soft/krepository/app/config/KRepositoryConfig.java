@@ -91,6 +91,14 @@ public class KRepositoryConfig {
         // ( https://cwiki.apache.org/confluence/display/KAFKA/KIP-161%3A+streams+deserialization+exception+handlers )
         props.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
                 LogAndContinueExceptionHandler.class.getName());
+        //
+        // Note: For an unknown reason the above approach is NOT enough.
+        // There are still exceptions which cause a shutdown of k-repository, e.g.
+        //   Caused by: org.apache.kafka.common.errors.SerializationException: Error deserializing Avro message for id 3
+        //   Caused by: org.apache.kafka.common.errors.SerializationException: Could not find class com.j9soft.krepository.v1.commandsmodel.UknownEntityRequestV1 specified in writer's schema whilst finding reader's schema for a SpecificRecord.
+        // @TODO So, to be on the safe side, we need to implement something similar to:
+        //   https://stackoverflow.com/questions/42666756/handling-bad-messages-using-kafkas-streams-api
+        //     "Option 1: Skip corrupted records with flatMap"
 
         // @TODO Replication should be 3. (in order to support one failure during an ongoing maintenance of one broker)
         props.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, 1);

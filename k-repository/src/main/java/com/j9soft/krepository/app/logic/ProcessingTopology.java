@@ -13,9 +13,11 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Produced;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +26,8 @@ import java.util.Map;
 
 @Component
 public class ProcessingTopology {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProcessingTopology.class);
 
     public static final String LOCAL_STORE_NAME = "entities-store";
 
@@ -94,7 +98,11 @@ public class ProcessingTopology {
                 // Note: key of messages with entity requests must contain entity_id_in_subdomain ! (otherwise join does not work)
                 //
                 commandsStream.leftJoin(currentEntitiesTable,
-                        new CommandExecutor()); // the ValueJoiner is to produce join output records, i.e. the resulting Entity values.
+                        new CommandExecutor(), // the ValueJoiner is to produce join output records, i.e. the resulting Entity values.
+                        Joined.with(keySerde, commandSerde, entitySerde)); // in order to avoid: SerializationException: Error retrieving Avro schema for id 3
+
+//        // @TODO remove when done investigation
+//        newEntitiesStream.peek((key, value) -> logger.info("New entity record: key = {}, value = {}", key, value));
 
         // Publish the new Entity values to the same topic, v1-entities-topic.
         // (but first, via flatMap(), we need to ignore some values (e.g. ALREADY_EXISTING_ENTITY_TO_BE_IGNORED)
@@ -115,6 +123,12 @@ public class ProcessingTopology {
         Topology topology = builder.build();
         KafkaStreams streams = new KafkaStreams(topology, config.getStreamsProperties());
         streams.start();
+
+        // print the topology
+        logger.info("Topology: {}", topology.describe());
+
+        // shutdown hook to correctly close the streams application
+        Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
     }
 
     private static <T extends SpecificRecord> Serde<T> createValueSerde(Map<String, String> avroSerdeConfig) {
