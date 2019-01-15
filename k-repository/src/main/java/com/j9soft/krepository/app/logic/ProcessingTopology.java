@@ -10,9 +10,10 @@ import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.StoreBuilder;
+import org.apache.kafka.streams.state.Stores;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,12 +27,10 @@ public class ProcessingTopology {
 
     private static final Logger logger = LoggerFactory.getLogger(ProcessingTopology.class);
 
-    public static final String LOCAL_STORE_NAME = "entities-store";
+    private static final String LOCAL_STORE_NAME = "entities-store";
 
     @Autowired
     public ProcessingTopology(KRepositoryConfig config) {
-
-        Map<String, String> avroSerdeConfig = prepareConfigPropertiesOfAvroSerde( config.getSchemaRegistryUrl() );
 
         // Let's prepare serializers/deserializers to be used when reading from and writing to topics.
         // ( https://docs.confluent.io/current/streams/developer-guide/datatypes.html#streams-developer-guide-serdes )
@@ -39,85 +38,61 @@ public class ProcessingTopology {
         // Our key is just the same string as in property 'entity_id_in_subdomain' of a request object. (e.g. NotificationIdentifier of a SourceAlarm)
         final Serde<String> keySerde = Serdes.String();
         //
-
         // @FUTURE Entities topic needs avro serde for keys.
         // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
 
-        // Topics have messages with different values, so we need different Serdes.
+        // Both topics have messages with different values, so we need different Serdes.
+        Map<String, String> avroSerdeConfig = prepareConfigPropertiesOfAvroSerde( config.getSchemaRegistryUrl() );
         final Serde<SpecificRecord> commandSerde = createValueSerde(avroSerdeConfig); // SpecificRecord because this topic has different classes as values
         final Serde<EntityV1> entitySerde = createValueSerde(avroSerdeConfig);
 
-        // Let's prepare our k-streams processing Topology as follows:
-        //  (input) v1-commands-topic -> join to the local store (which is implemented as a KTable based on v1-entities-topic)
-        //  join: During the join we calculate a new entity. (with attributes merged from value provided from v1-commands-topic and v1-entities-topic)
-        //  join -> update in the local store (what is automatically stored in v1-entities-topic by the KTable logic)
-        //  join -> publish on v1-entities-topic  (output)
-        //             (i.e. currently we do publish manually to v1-entities-topic,
-        //               but in the @FUTURE it will be automatically saved by a logic of the local store)
+        // Let's prepare a local store for keeping current EntityV1 values in memory.
+        //  https://docs.confluent.io/current/streams/developer-guide/datatypes.html#streams-developer-guide-serdes
+        //  http://mkuthan.github.io/blog/2017/11/02/kafka-streams-dsl-vs-processor-api/
         //
-        StreamsBuilder builder = new StreamsBuilder();
+        final Map<String, String> changelogConfig = new HashMap<>();
+        //
+        // @FUTURE Let's enable fault tolerance for our State Stores. It is based on both: changelog topic and in-memory replicas.
+        // https://docs.confluent.io/current/streams/developer-guide/processor-api.html#enable-or-disable-fault-tolerance-of-state-stores-store-changelogs
+        // https://docs.confluent.io/current/streams/developer-guide/config-streams.html#streams-developer-guide-standby-replicas
+        //  "If you configure n standby replicas, you need to provision n+1 KafkaStreams instances"  (i.e. we need to adjust setup of Integration Test scenarios)
+        //changelogConfig.put("min.insync.replicas", "2");
+        //
+        StoreBuilder<KeyValueStore<String, EntityV1>> lastStateStoreBuilder = Stores.keyValueStoreBuilder(
+                Stores.persistentKeyValueStore(LOCAL_STORE_NAME),
+                keySerde,
+                entitySerde)
+                .withLoggingEnabled(changelogConfig); // enable a changelog for any changes made to the store, with custom changelog settings
 
-        // Input stream with requests to be executed on entities.
-        // Based on: v1-commands-topic
-        // Key is entity_id_in_subdomain - this way it is possible to join it with KTable based on v1-entities-topic.
-        // (Note: for subdomain requests key must be not null,
-        //   but key content is irrelevant. (additionally producers must assure that a copy of every subdomain request
-        //    is published to every partition of v1-commands-topic, i.e. they should not use a key based partitioner)
+        // Let's prepare the processing topology.
+        // Relevant info:
+        //  https://dzone.com/articles/kafka-streams-catching-data-in-the-act-3-the-mecha
+        //  https://aseigneurin.github.io/2017/08/04/why-kafka-streams-didnt-work-for-us-part-3.html
+        //  https://kafka.apache.org/documentation/streams/architecture#streams_architecture_tasks
+        //  https://docs.confluent.io/current/streams/developer-guide/processor-api.html#connecting-processors-and-state-stores
+        //  https://github.com/bbejeck/kafka-streams/blob/master/src/main/java/bbejeck/streams/purchases/PurchaseKafkaStreamsDriver.java
+        //  https://github.com/confluentinc/online-inferencing-blog-application/blob/master/src/main/java/org/apache/kafka/inference/blog/streams/KStreamsOnLinePredictions.java
+        //  http://codingjunkie.net/kafka-processor-part1/
         //
-        KStream<String, SpecificRecord> commandsStream = builder.stream( config.getCommandsTopicName(),
-                Consumed.with(keySerde, commandSerde));
+        Topology topology = new Topology();
+        //
+        // Our processing topology is as follows:
+        //         1. the source processor node (named "Commands") that takes Kafka topic "v1-commands-topic" as input
+        topology.addSource("Commands", keySerde.deserializer(), commandSerde.deserializer(), config.getCommandsTopicName() )
+                // 2. the CommandProcessor node which takes the source processor as its upstream processor
+                .addProcessor("CommandProcessor", () -> new CommandProcessor(LOCAL_STORE_NAME), "Commands")
+                // 3. the store associated with the CommandProcessor processor, i.e. the store to persist current Entities
+                .addStateStore(lastStateStoreBuilder, "CommandProcessor")
+                // 4. the sink processor node (named "Entities") that takes Kafka topic "v1-entities-topic" as output
+                //    with the CommandProcessor node as its upstream processor
+                .addSink("Entities", config.getEntitiesTopicName(), keySerde.serializer(), entitySerde.serializer(), "CommandProcessor");
 
-        // Input table with current entity values.
-        // Based on: v1-entities-topic
-        // Contains only some of the entities - only those from topic partitions relevant to this instance of k-repository app.
-        // https://kafka.apache.org/21/documentation/streams/developer-guide/dsl-api
-        // "the local KTable instance of every application instance will be populated with data
-        //   from only a subset of the partitions of the input topic."
-        //
-        // @TODO You must provide a name for the table (more precisely, for the internal state store that backs the table). This is required for supporting interactive queries against the table. When a name is not provided the table will not queryable and an internal name will be provided for the state store.
-        //
-        KTable<String, EntityV1> currentEntitiesTable = builder.table( config.getEntitiesTopicName(),
-                Consumed.with(keySerde, entitySerde));
-
-        // For every received request let's perform lookup for a current Entity value, i.e. a left join.
-        //
-        KStream<String, EntityV1> newEntitiesStream =
-                // https://kafka.apache.org/21/documentation/streams/developer-guide/dsl-api
-                // "KTable also provides an ability to look up current values of data records by keys.
-                //  This table-lookup functionality is available through join operations
-                //  leftJoin:
-                //  Performs a LEFT JOIN of this stream with the table, effectively doing a table lookup.
-                //  Input records with a null key or a null value are ignored and do not trigger the join."
-                //
-                // Note: because of the above we must assure that also subdomain requests have a key. (although it is enough to be not null)
-                // Note: key of messages with entity requests must contain entity_id_in_subdomain ! (otherwise join does not work)
-                //
-                commandsStream.leftJoin(currentEntitiesTable,
-                        new CommandExecutor(), // the ValueJoiner is to produce join output records, i.e. the resulting Entity values.
-                        Joined.with(keySerde, commandSerde, entitySerde)); // in order to avoid: SerializationException: Error retrieving Avro schema for id 3
-
-//        // @TODO remove when done investigation
-//        newEntitiesStream.peek((key, value) -> logger.info("New entity record: key = {}, value = {}", key, value));
-
-        // Publish the new Entity values to the same topic, v1-entities-topic.
-        // (but first, via flatMap(), we need to ignore some values (e.g. ALREADY_EXISTING_ENTITY_TO_BE_IGNORED)
-        //
-        // Note: This is only a draft implementation. It does not guarantee consistency
-        //  as our currentEntitiesTable may be delayed.  (i.e. the latest state of an entity may not be in memory yet,
-        //    due to required cycle: publish + poll (receive) + update KTable.
-        // @FUTURE The target implementation needs to be done using a local state store.
-        //   (and using Processor API - in order to avoid significant overhead introduced by KStreams (i.e. those lots of intermediate topics))
-        //
-        newEntitiesStream
-                .flatMap(new EntityKeyValueMapper())
-                .to(config.getEntitiesTopicName(), Produced.with(keySerde, entitySerde));
 
         // Start the Kafka Streams threads
         // ( https://kafka.apache.org/21/documentation/streams/developer-guide/write-streams.html )
         //
-        Topology topology = builder.build();
         KafkaStreams streams = new KafkaStreams(topology, config.getStreamsProperties());
         streams.start();
 
@@ -168,49 +143,4 @@ public class ProcessingTopology {
         return serdeConfig;
     }
 
-    /*
-    Note: Current implementation, provided above, is using Kafka Streams.
-      It is well enough for PoC (and it was much quicker to develop),
-       but for the production code we would use Processor API in order to:
-        - decrease resource usage.  see more: https://aseigneurin.github.io/2017/08/04/why-kafka-streams-didnt-work-for-us-part-3.html
-       -  avoid stale reads from KTable due to publish+poll cycle)
-
-    public ProcessingTopology() {
-
-        // Relevant info:
-        //  https://kafka.apache.org/documentation/streams/architecture#streams_architecture_tasks
-        //  https://docs.confluent.io/current/streams/developer-guide/processor-api.html#connecting-processors-and-state-stores
-        //  https://github.com/bbejeck/kafka-streams/blob/master/src/main/java/bbejeck/streams/purchases/PurchaseKafkaStreamsDriver.java
-        //  https://github.com/confluentinc/online-inferencing-blog-application/blob/master/src/main/java/org/apache/kafka/inference/blog/streams/KStreamsOnLinePredictions.java
-        //  http://codingjunkie.net/kafka-processor-part1/
-
-        Topology topology = new Topology();
-
-        // https://docs.confluent.io/current/streams/developer-guide/processor-api.html#enable-or-disable-fault-tolerance-of-state-stores-store-changelogs
-        Map<String, String> changelogConfig = new HashMap<>();
-        // override min.insync.replicas
-        changelogConfig.put("min.insyc.replicas", "2");
-
-        // https://docs.confluent.io/current/streams/developer-guide/datatypes.html#streams-developer-guide-serdes
-        StoreBuilder<KeyValueStore<String, Long>> lastStateStoreBuilder = Stores.keyValueStoreBuilder(
-                Stores.persistentKeyValueStore(LOCAL_STORE_NAME),
-                Serdes.String(),
-                Serdes.Long())
-                .withLoggingEnabled(changelogConfig); // enable changelogConfig, with custom changelog settings
-
-        // add the source processor node (named "Commands") that takes Kafka topic "v1-commands-topic" as input
-        topology.addSource("Commands", this.config.getCommandsTopicName()) // Consumed.with(StringSerde, valueGenericAvroSerde)
-                // add the CommandProcessor node which takes the source processor as its upstream processor
-                .addProcessor("CommandProcessor", () -> new CommandProcessor(), "Commands")
-                // add the count store associated with the CommandProcessor processor
-                .addStateStore(lastStateStoreBuilder, "CommandProcessor")
-                // add the sink processor node (named "Entities") that takes Kafka topic "v1-entities-topic" as output
-                // and the CommandProcessor node as its upstream processor
-                .addSink("Entities", this.config.getEntitiesTopicName(), "CommandProcessor");
-
-        // Use the topology and streamingConfig to start the kafka streams processing
-        KafkaStreams streaming = new KafkaStreams(topology, config.getStreamsProperties());
-        streaming.start();
-    }
-     */
 }
