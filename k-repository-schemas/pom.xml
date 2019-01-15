@@ -103,8 +103,9 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
                 <param>http://schema-registry:8081</param>
             </schemaRegistryUrls>
             <subjects>
-                  <com.j9soft.krepository.v1.entitiesmodel.EntityV1>src/main/avro/entity-v1.avsc</com.j9soft.krepository.v1.entitiesmodel.EntityV1>
-                  <com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1>src/main/avro/create-entity-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1>
+                <com.j9soft.krepository.v1.entitiesmodel.EntityV1>src/main/avro/entity-v1.avsc</com.j9soft.krepository.v1.entitiesmodel.EntityV1>
+                <com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1>src/main/avro/create-entity-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1>
+                <com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1>src/main/avro/delete-entity-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1>
             </subjects>
         </configuration>
         <goals>
