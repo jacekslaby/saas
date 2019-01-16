@@ -58,7 +58,7 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
             deleteEntity(request);
 
         } else {
-            logger.info("CommandProcessor.process: Uknown request '{}'. Command ignored.", commandTypeName);
+            logger.info("process: Uknown request '{}'. Command ignored.", commandTypeName);
         }
     }
 
@@ -69,17 +69,22 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
 
     private void createEntity(CreateEntityRequestV1 createEntityRequest) {
 
-        logger.info("CommandProcessor.process: CreateEntityRequestV1: uuid = {}", createEntityRequest.getUuid() );
+        logger.info("process: CreateEntityRequestV1: uuid = {}", createEntityRequest.getUuid() );
 
         // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
         String entityKey = createEntityRequest.getEntityIdInSubdomain().toString();
+        if (logger.isDebugEnabled()) {
+            logger.debug("process: CreateEntityRequestV1: entityKey = {}", entityKey);
+            logger.debug("process: CreateEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
+                    entityKVStateStore, entityKVStateStore.approximateNumEntries());
+        }
         EntityV1 currentEntityValue = entityKVStateStore.get(entityKey);
 
         if (currentEntityValue != null) {
             // We do not change the already existing entity.  (btw: there is PutEntityRequest for this)
-            logger.info("CommandProcessor.process: Command ignored. Already existing entity with key '{}'.", entityKey);
+            logger.info("process: CreateEntityRequestV1: Command ignored. Already existing entity with key '{}'.", entityKey);
 
         } else {
             // We need to create a new entity.
@@ -95,18 +100,23 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
             context.forward(entityKey, newEntityValue);
             entityKVStateStore.put(entityKey, newEntityValue);
 
-            logger.info("CommandProcessor.process: Entity created. New entity with key '{}'.", entityKey);
+            logger.info("process: CreateEntityRequestV1: Entity created. New entity with key '{}'.", entityKey);
         }
     }
 
     private void deleteEntity(DeleteEntityRequestV1 deleteEntityRequest) {
 
-        logger.info("CommandProcessor.process: DeleteEntityRequestV1: uuid = {}", deleteEntityRequest.getUuid());
+        logger.info("process: DeleteEntityRequestV1: uuid = {}", deleteEntityRequest.getUuid());
 
         // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
         String entityKey = deleteEntityRequest.getEntityIdInSubdomain().toString();
+        if (logger.isDebugEnabled()) {
+            logger.debug("process: DeleteEntityRequestV1: entityKey = {}", entityKey);
+            logger.debug("process: DeleteEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
+                    entityKVStateStore, entityKVStateStore.approximateNumEntries());
+        }
         EntityV1 currentEntityValue = entityKVStateStore.get(entityKey);
 
         if (currentEntityValue != null) {
@@ -114,11 +124,11 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
             context.forward(entityKey, null);  // (i.e. we publish null as a tombstone)
             entityKVStateStore.delete(entityKey);
 
-            logger.info("CommandProcessor.process: Entity deleted. Entity with key '{}'.", entityKey);
+            logger.info("process: DeleteEntityRequestV1: Entity deleted. Entity with key '{}'.", entityKey);
 
         } else {
             // We do not do anything for the already not existing entity.
-            logger.info("CommandProcessor.process: Command ignored. Not existing entity with key '{}'.", entityKey);
+            logger.info("process: DeleteEntityRequestV1: Command ignored. Not existing entity with key '{}'.", entityKey);
         }
     }
 

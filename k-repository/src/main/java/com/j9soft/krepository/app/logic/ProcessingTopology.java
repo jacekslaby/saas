@@ -52,19 +52,26 @@ public class ProcessingTopology {
         //  https://docs.confluent.io/current/streams/developer-guide/datatypes.html#streams-developer-guide-serdes
         //  http://mkuthan.github.io/blog/2017/11/02/kafka-streams-dsl-vs-processor-api/
         //
-        final Map<String, String> changelogConfig = new HashMap<>();
-        //
         // @FUTURE Let's enable fault tolerance for our State Stores. It is based on both: changelog topic and in-memory replicas.
         // https://docs.confluent.io/current/streams/developer-guide/processor-api.html#enable-or-disable-fault-tolerance-of-state-stores-store-changelogs
         // https://docs.confluent.io/current/streams/developer-guide/config-streams.html#streams-developer-guide-standby-replicas
         //  "If you configure n standby replicas, you need to provision n+1 KafkaStreams instances"  (i.e. we need to adjust setup of Integration Test scenarios)
+        //final Map<String, String> changelogConfig = new HashMap<>();
         //changelogConfig.put("min.insync.replicas", "2");
         //
+        // @FUTURE In case we need to support huge benchmarks then we may need a persistent store. (i.e. not in-memory)
+        // StoreBuilder<KeyValueStore<String, EntityV1>> lastStateStoreBuilder = Stores.keyValueStoreBuilder(
+        //        Stores.persistentKeyValueStore(LOCAL_STORE_NAME), ...)
+        //
+        // For now an in-memory store is enough.
         StoreBuilder<KeyValueStore<String, EntityV1>> lastStateStoreBuilder = Stores.keyValueStoreBuilder(
-                Stores.persistentKeyValueStore(LOCAL_STORE_NAME),
+                Stores.inMemoryKeyValueStore(LOCAL_STORE_NAME),
                 keySerde,
-                entitySerde)
-                .withLoggingEnabled(changelogConfig); // enable a changelog for any changes made to the store, with custom changelog settings
+                entitySerde);
+        // @FUTURE enable a changelog
+        //   ...
+        //   entitySerde)
+        //   .withLoggingEnabled(changelogConfig); // enable a changelog for any changes made to the store, with custom changelog settings
 
         // Let's prepare the processing topology.
         // Relevant info:
