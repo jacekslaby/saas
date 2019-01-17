@@ -8,7 +8,17 @@
     {"name": "entity_type_name", "type": "string", "doc": "Type name of the entity contained in this message. (e.g. 'SourceAlarm'"},
     {"name": "entity_subdomain_name", "type": "string", "doc": "Name of a subdomain in which this entity exists. (e.g. 'Region ABC/AdapterEric2g-south'"},
     {"name": "entity_id_in_subdomain", "type": "string", "doc": "Unique ID of the entity within the subdomain."},
-    {"name": "entity_attributes", "type": ["null", {"type": "map", "values": "string"}], "default": null, "doc": "Data Transfer Object with attributes of the entity. (It may be a subset, i.e. not all attribute-value pairs must be present.)"},
+    {"name": "attributes",
+      "type": ["null",
+        {"type": "record",
+          "name": "Attributes",
+          "fields": [
+            {"name": "notification_identifier", "type": ["null", "string"], "default": "null", "doc": "Identifier of Alarm instance. (The same value as in entity_id_in_subdomain.)" },
+            {"name": "perceived_severity", "type": ["null", "string"], "default": "null", "doc": "Severity of Alarm. (1 - Critical, 2 - Major, ...)" }
+          ]
+        } ],
+      "default": null,
+      "doc": "Data Transfer Object with attributes of the entity. Instances may have different sets of attributes, defined in different versions of this schema. All schema versions are registered in Schema Registry."},
     {"name": "event_date", "type": ["null", "long"], "default": null, "doc": "The date and time at which an event represented by this message happened. (i.e. according to the source system"},
     {"name": "lineage_start_date", "type": ["null", "long"], "default": null, "doc": "This value represents the date and time at which the oldest ancestor request of this request entered the system. Null means no ancestor exists."}
   ]

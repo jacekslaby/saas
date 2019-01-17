@@ -94,7 +94,6 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
                     .setEntityTypeName( createEntityRequest.getEntityTypeName() )
                     .setEntitySubdomainName( createEntityRequest.getEntitySubdomainName() )
                     .setEntityIdInSubdomain( createEntityRequest.getEntityIdInSubdomain() )
-                    .setEntityAttributes( createEntityRequest.getEntityAttributes() )
                     .build();
 
             context.forward(entityKey, newEntityValue);

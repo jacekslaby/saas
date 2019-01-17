@@ -127,6 +127,9 @@ public class ProcessingTopology {
         final Map<String, String> serdeConfig = new HashMap<>();
         serdeConfig.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
 
+        // @TODO Define separate configs, because k-repository will create and register new versions of schema EntityV1.
+        //  (so, EntityV1 Serde must receive "true" in this property)
+        //
         // We do not want to auto register schemas. The schemas are registered by maintenance scripts launched directly against Kafka cluster.
         serdeConfig.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false");
 

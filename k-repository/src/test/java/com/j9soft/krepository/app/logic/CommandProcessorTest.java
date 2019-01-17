@@ -2,8 +2,9 @@ package com.j9soft.krepository.app.logic;
 
 import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.EntityAttributes;
+import com.j9soft.krepository.v1.entitiesmodel.Attributes;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
-import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.junit.Before;
@@ -11,8 +12,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -25,7 +24,6 @@ public class CommandProcessorTest {
     private static String SOURCE_ALARM = "SourceAlarm";
     private static String ENTITY_SUBDOMAIN_NAME = "Xphone:AdapterSiemens_nw";
     private static String ENTITY_ID_IN_SUBDOMAIN = "123";
-    private static String ENTITY_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER = "NotificationIdentifier";
 
     private CommandProcessor commandProcessor;
     private KeyValueStore<String, EntityV1> entityKVStateStoreMock;
@@ -86,7 +84,7 @@ public class CommandProcessorTest {
         assertEquals(command.getEntityTypeName(), resultEntity.getEntityTypeName());
         assertEquals(command.getEntitySubdomainName(), resultEntity.getEntitySubdomainName());
         assertEquals(command.getEntityIdInSubdomain(), resultEntity.getEntityIdInSubdomain());
-        assertEquals(command.getEntityAttributes(), resultEntity.getEntityAttributes());
+        assertEquals(command.getEntityAttributes(), resultEntity.getAttributes());
 
         // And verify that the same key and entity were forwarded.
         ArgumentCaptor<EntityV1> argumentForwarded = ArgumentCaptor.forClass(EntityV1.class);
@@ -108,6 +106,7 @@ public class CommandProcessorTest {
 
         // Nothing should be stored.
         verify(entityKVStateStoreMock).get(any());
+        verify(entityKVStateStoreMock).approximateNumEntries();  // @TODO how to do it better ?
         verifyZeroInteractions(entityKVStateStoreMock);
         // Nothing should be forwarded.
         verify(processorContextMock).getStateStore(any());
@@ -147,6 +146,7 @@ public class CommandProcessorTest {
 
         // Nothing should be stored.
         verify(entityKVStateStoreMock).get(any());
+        verify(entityKVStateStoreMock).approximateNumEntries();  // @TODO how to do it better ?
         verifyZeroInteractions(entityKVStateStoreMock);
         // Nothing should be forwarded.
         verify(processorContextMock).getStateStore(any());
@@ -155,8 +155,9 @@ public class CommandProcessorTest {
 
     private CreateEntityRequestV1 prepareCreateEntityRequest() {
 
-        Map<CharSequence, CharSequence> attributes = new HashMap<>();
-        attributes.put(ENTITY_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, ENTITY_ID_IN_SUBDOMAIN);
+        EntityAttributes entityAttributes = EntityAttributes.newBuilder()
+                .setNotificationIdentifier(ENTITY_ID_IN_SUBDOMAIN)
+                .build();
 
         return CreateEntityRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
@@ -164,7 +165,7 @@ public class CommandProcessorTest {
                 .setEntityTypeName(SOURCE_ALARM)
                 .setEntitySubdomainName(ENTITY_SUBDOMAIN_NAME)
                 .setEntityIdInSubdomain(ENTITY_ID_IN_SUBDOMAIN)
-                .setEntityAttributes(attributes)
+                .setEntityAttributes(entityAttributes)
                 .build();
     }
 
@@ -181,8 +182,9 @@ public class CommandProcessorTest {
 
     private EntityV1 prepareEntity() {
 
-        Map<CharSequence, CharSequence> attributes = new HashMap<>();
-        attributes.put(ENTITY_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER, ENTITY_ID_IN_SUBDOMAIN);
+        Attributes attributes = Attributes.newBuilder()
+                .setNotificationIdentifier(ENTITY_ID_IN_SUBDOMAIN)
+                .build();
 
         return EntityV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
@@ -190,7 +192,7 @@ public class CommandProcessorTest {
                 .setEntityTypeName(SOURCE_ALARM)
                 .setEntitySubdomainName(ENTITY_SUBDOMAIN_NAME)
                 .setEntityIdInSubdomain(ENTITY_ID_IN_SUBDOMAIN)
-                .setEntityAttributes(attributes)
+                .setAttributes(attributes)
                 .build();
     }
 
