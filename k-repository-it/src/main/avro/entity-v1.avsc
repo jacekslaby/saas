@@ -13,8 +13,8 @@
         {"type": "record",
           "name": "Attributes",
           "fields": [
-            {"name": "notification_identifier", "type": ["null", "string"], "default": "null", "doc": "Identifier of Alarm instance. (The same value as in entity_id_in_subdomain.)" },
-            {"name": "perceived_severity", "type": ["null", "string"], "default": "null", "doc": "Severity of Alarm. (1 - Critical, 2 - Major, ...)" }
+            {"name": "notification_identifier", "type": ["null", "string"], "default": null, "doc": "Identifier of Alarm instance. (The same value as in entity_id_in_subdomain.)" },
+            {"name": "perceived_severity", "type": ["null", "string"], "default": null, "doc": "Severity of Alarm. (1 - Critical, 2 - Major, ...)" }
           ]
         } ],
       "default": null,

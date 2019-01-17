@@ -13,7 +13,7 @@
         {"type": "record",
           "name": "EntityAttributes",
           "fields": [
-            {"name": "notification_identifier", "type": ["null", "string"], "default": "null", "doc": "Identifier of Alarm instance. (The same value as in entity_id_in_subdomain.)" }
+            {"name": "notification_identifier", "type": ["null", "string"], "default": null, "doc": "Identifier of Alarm instance. (The same value as in entity_id_in_subdomain.)" }
           ]
         } ],
       "default": null,
