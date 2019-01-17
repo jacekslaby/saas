@@ -2,7 +2,12 @@ package com.j9soft.krepository.app.logic;
 
 import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
 import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.EntityAttributes;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
+import com.j9soft.krepository.v1.entitiesmodel.EntityV1FieldNames;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
@@ -10,6 +15,8 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -31,10 +38,32 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
 
     private ProcessorContext context;
     private String entitiesStoreName;
-    private KeyValueStore<String, EntityV1> entityKVStateStore;
+    private KeyValueStore<String, GenericRecord> entityKVStateStore;
+
+    // The current Entity schema may be enhanced with additional fields during runtime.
+    // (It happens when CommandProcessor receives a request with additional entity attributes.
+    //  In such case a new schema is created in process() method. It is also registered in Schema Registry by Avro SerDe.)
+    // (@TODO: Investigate whether KStreams assure that only one thread executes process() method. Otherwise synchronized needed.)
+    private Schema currentEntitySchema;
+    private Schema currentAttributesSchema;
+    private Set currentAttributesSchemaFieldNamesSet;
 
     public CommandProcessor(String entitiesStoreName) {
+
         this.entitiesStoreName = entitiesStoreName;
+        initEntitySchema(EntityV1.getClassSchema());
+    }
+
+    private void initEntitySchema(Schema newEntitySchema) {
+        currentEntitySchema = newEntitySchema;
+        currentAttributesSchema = currentEntitySchema.getField(EntityV1FieldNames.ATTRIBUTES)
+                .schema().getTypes().get(1); // In union 'null' is under 0 and 'record' is under 1
+
+        // Let's build set with field names. It speeds up detection of new attributes in process().
+        currentAttributesSchemaFieldNamesSet = new HashSet();
+        for (Schema.Field fieldFromCurrent: currentAttributesSchema.getFields()) {
+            currentAttributesSchemaFieldNamesSet.add(fieldFromCurrent.name());
+        }
     }
 
     @Override
@@ -80,7 +109,7 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
             logger.debug("process: CreateEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
                     entityKVStateStore, entityKVStateStore.approximateNumEntries());
         }
-        EntityV1 currentEntityValue = entityKVStateStore.get(entityKey);
+        GenericRecord currentEntityValue = entityKVStateStore.get(entityKey);
 
         if (currentEntityValue != null) {
             // We do not change the already existing entity.  (btw: there is PutEntityRequest for this)
@@ -88,19 +117,67 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
 
         } else {
             // We need to create a new entity.
-            EntityV1 newEntityValue = EntityV1.newBuilder()
-                    .setUuid(UUID.randomUUID().toString())
-                    .setEntryDate(System.currentTimeMillis())
-                    .setEntityTypeName( createEntityRequest.getEntityTypeName() )
-                    .setEntitySubdomainName( createEntityRequest.getEntitySubdomainName() )
-                    .setEntityIdInSubdomain( createEntityRequest.getEntityIdInSubdomain() )
-                    .build();
+            GenericRecord newEntityValue = createNewEntity(createEntityRequest);
 
+            // Forward it in order to be published on entities topic
+            //  and save it in the local store.
             context.forward(entityKey, newEntityValue);
             entityKVStateStore.put(entityKey, newEntityValue);
 
             logger.info("process: CreateEntityRequestV1: Entity created. New entity with key '{}'.", entityKey);
         }
+    }
+
+    private GenericRecord createNewEntity(CreateEntityRequestV1 createEntityRequest) {
+
+        GenericRecord newEntity = new GenericData.Record(currentEntitySchema);
+
+        newEntity.put(EntityV1FieldNames.UUID, UUID.randomUUID().toString());
+        newEntity.put(EntityV1FieldNames.ENTRY_DATE, System.currentTimeMillis());
+        newEntity.put(EntityV1FieldNames.ENTITY_TYPE_NAME, createEntityRequest.getEntityTypeName());
+        newEntity.put(EntityV1FieldNames.ENTITY_SUBDOMAIN_NAME, createEntityRequest.getEntitySubdomainName());
+        newEntity.put(EntityV1FieldNames.ENTITY_ID_IN_SUBDOMAIN, createEntityRequest.getEntityIdInSubdomain());
+
+        GenericRecord newAttributes = createAttributes( createEntityRequest.getEntityAttributes() );
+        if (newAttributes != null) {
+            newEntity.put(EntityV1FieldNames.ATTRIBUTES, newAttributes);
+        }
+
+        return newEntity;
+    }
+
+    private GenericRecord createAttributes(EntityAttributes entityAttributesFromRequest) {
+
+        if (entityAttributesFromRequest == null) {
+            return null; // record with attributes is optional, so it may be null in Request (and in Entity)
+        }
+
+        // Let's verify whether we need to create a new Schema for Entities.
+        boolean newSchemaIsRequired = false;
+        for (Schema.Field fieldFromRequest: entityAttributesFromRequest.getSchema().getFields()) {
+            if (! currentAttributesSchemaFieldNamesSet.contains(fieldFromRequest.name()) ) {
+                // We have at least one new field.
+                newSchemaIsRequired = true;
+                break;
+            }
+        }
+
+        if (newSchemaIsRequired) {
+            // (Note: This scenario is not frequent, a few cases a month,
+            //   so code clarity is more important then performance.)
+
+            // @TODO initEntitySchema();
+
+            throw new RuntimeException("@TODO");
+        }
+
+        // Let's copy all attributes provided in this Request.
+        GenericRecord newAttributes = new GenericData.Record(currentAttributesSchema);
+        for (Schema.Field fieldFromRequest: entityAttributesFromRequest.getSchema().getFields()) {
+            newAttributes.put(fieldFromRequest.name(), entityAttributesFromRequest.get(fieldFromRequest.pos()));
+        }
+
+        return newAttributes;
     }
 
     private void deleteEntity(DeleteEntityRequestV1 deleteEntityRequest) {
@@ -116,7 +193,7 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
             logger.debug("process: DeleteEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
                     entityKVStateStore, entityKVStateStore.approximateNumEntries());
         }
-        EntityV1 currentEntityValue = entityKVStateStore.get(entityKey);
+        GenericRecord currentEntityValue = entityKVStateStore.get(entityKey);
 
         if (currentEntityValue != null) {
             // We delete the existing entity.

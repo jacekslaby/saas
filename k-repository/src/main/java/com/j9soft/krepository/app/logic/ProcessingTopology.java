@@ -1,11 +1,12 @@
 package com.j9soft.krepository.app.logic;
 
 import com.j9soft.krepository.app.config.KRepositoryConfig;
-import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.confluent.kafka.serializers.subject.RecordNameStrategy;
+import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -44,9 +45,8 @@ public class ProcessingTopology {
         //   use the same topics)
 
         // Both topics have messages with different values, so we need different Serdes.
-        Map<String, String> avroSerdeConfig = prepareConfigPropertiesOfAvroSerde( config.getSchemaRegistryUrl() );
-        final Serde<SpecificRecord> commandSerde = createValueSerde(avroSerdeConfig); // SpecificRecord because this topic has different classes as values
-        final Serde<EntityV1> entitySerde = createValueSerde(avroSerdeConfig);
+        final Serde<SpecificRecord> commandSerde = createCommandSerde(config.getSchemaRegistryUrl()); // SpecificRecord because this topic has different classes as values
+        final GenericAvroSerde entitySerde = createEntitySerde(config.getSchemaRegistryUrl());
 
         // Let's prepare a local store for keeping current EntityV1 values in memory.
         //  https://docs.confluent.io/current/streams/developer-guide/datatypes.html#streams-developer-guide-serdes
@@ -64,7 +64,7 @@ public class ProcessingTopology {
         //        Stores.persistentKeyValueStore(LOCAL_STORE_NAME), ...)
         //
         // For now an in-memory store is enough.
-        StoreBuilder<KeyValueStore<String, EntityV1>> lastStateStoreBuilder = Stores.keyValueStoreBuilder(
+        StoreBuilder<KeyValueStore<String, GenericRecord>> lastStateStoreBuilder = Stores.keyValueStoreBuilder(
                 Stores.inMemoryKeyValueStore(LOCAL_STORE_NAME),
                 keySerde,
                 entitySerde);
@@ -110,30 +110,20 @@ public class ProcessingTopology {
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
     }
 
-    private static <T extends SpecificRecord> Serde<T> createValueSerde(Map<String, String> avroSerdeConfig) {
-        final Serde<T> newSerde = new SpecificAvroSerde<>();
-        //
-        // We must call configure.
-        // (see also https://github.com/confluentinc/kafka-streams-examples/blob/5.0.1-post/src/test/java/io/confluent/examples/streams/SpecificAvroIntegrationTest.java )
-        newSerde.configure(avroSerdeConfig, false); // `false` because this Serde is for record/message values, not keys
-
-        return newSerde;
-    }
-
-    private Map<String, String> prepareConfigPropertiesOfAvroSerde(String schemaRegistryUrl) {
+    /**
+     * Creates Serde for commands topic.
+     */
+    private static <T extends SpecificRecord> Serde<T> createCommandSerde(String schemaRegistryUrl) {
 
         // Our values are encoded as Avro schemas objects so we need to configure a Serde with an access to Schema Registry.
         //
         final Map<String, String> serdeConfig = new HashMap<>();
         serdeConfig.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
 
-        // @TODO Define separate configs, because k-repository will create and register new versions of schema EntityV1.
-        //  (so, EntityV1 Serde must receive "true" in this property)
-        //
         // We do not want to auto register schemas. The schemas are registered by maintenance scripts launched directly against Kafka cluster.
         serdeConfig.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false");
 
-        // We have may several types (i.e. Avro schemas) used on both topics,
+        // We have may several types (i.e. Avro schemas) used on commands topic,
         //  so we need to tell the serializers/deserializers that fact.
         // (see also:
         //   http://martin.kleppmann.com/2018/01/18/event-types-in-kafka-topic.html
@@ -143,14 +133,53 @@ public class ProcessingTopology {
         // )
         serdeConfig.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
 
-        // We want to receive POJOs (e.g. EntityV1), so we cannot use GenericAvroSerde.
+        // We want to receive POJOs (e.g. CreateEntityRequestV1), so we cannot use GenericAvroSerde.
         //  (see also: https://dzone.com/articles/kafka-avro-serialization-and-the-schema-registry
         //    https://stackoverflow.com/questions/31207768/generic-conversion-from-pojo-to-avro-record
         //  )
         // Instead we have:
         serdeConfig.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
 
-        return serdeConfig;
+        final Serde<T> newSerde = new SpecificAvroSerde<>();
+        //
+        // We must call configure.
+        // (see also https://github.com/confluentinc/kafka-streams-examples/blob/5.0.1-post/src/test/java/io/confluent/examples/streams/SpecificAvroIntegrationTest.java )
+        newSerde.configure(serdeConfig, false); // `false` because this Serde is for record/message values, not keys
+
+        return newSerde;
+    }
+
+    /**
+     * Creates Serde for entities topic.
+     */
+    private static GenericAvroSerde createEntitySerde(String schemaRegistryUrl) {
+
+        // Our values are encoded as Avro schemas objects so we need to configure a Serde with an access to Schema Registry.
+        //
+        final Map<String, String> serdeConfig = new HashMap<>();
+        serdeConfig.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+
+        // k-repository will create and register new versions of schema EntityV1.
+        serdeConfig.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "true");
+
+        // We have may several types (i.e. Avro schemas) used on entities topic,
+        //  so we need to tell the serializers/deserializers that fact.
+        // (see also:
+        //   http://martin.kleppmann.com/2018/01/18/event-types-in-kafka-topic.html
+        //     serdeConfig.put("value.subject.name.strategy", "io.confluent.kafka.serializers.subject.RecordNameStrategy");
+        //   https://stackoverflow.com/questions/51429759/multiple-message-types-in-a-single-kafka-topic-with-avro
+        //     "I haven't seen any working example of this. Not even a single one."
+        // )
+        serdeConfig.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
+
+        // We want to receive GenericRecords.
+        final GenericAvroSerde newSerde = new GenericAvroSerde();
+        //
+        // We must call configure.
+        // (see also https://github.com/confluentinc/kafka-streams-examples/blob/5.0.1-post/src/test/java/io/confluent/examples/streams/SpecificAvroIntegrationTest.java )
+        newSerde.configure(serdeConfig, false); // `false` because this Serde is for record/message values, not keys
+
+        return newSerde;
     }
 
 }
