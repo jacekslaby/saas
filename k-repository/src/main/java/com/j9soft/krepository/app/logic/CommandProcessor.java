@@ -1,20 +1,20 @@
 package com.j9soft.krepository.app.logic;
 
 import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1FieldNames;
 import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
-import com.j9soft.krepository.v1.commandsmodel.EntityAttributes;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1FieldNames;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -32,7 +32,7 @@ import java.util.UUID;
  * See also:
  * https://kafka.apache.org/21/javadoc/org/apache/kafka/streams/Topology.html#addProcessor-java.lang.String-org.apache.kafka.streams.processor.ProcessorSupplier-java.lang.String...-
  */
-public class CommandProcessor implements Processor<String, SpecificRecord> {
+public class CommandProcessor implements Processor<String, GenericRecord> {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandProcessor.class);
 
@@ -46,7 +46,7 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
     // (@TODO: Investigate whether KStreams assure that only one thread executes process() method. Otherwise synchronized needed.)
     private Schema currentEntitySchema;
     private Schema currentAttributesSchema;
-    private Set currentAttributesSchemaFieldNamesSet;
+    private Set<String> currentAttributesSchemaFieldNamesSet;
 
     public CommandProcessor(String entitiesStoreName) {
 
@@ -60,7 +60,7 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
                 .schema().getTypes().get(1); // In union 'null' is under 0 and 'record' is under 1
 
         // Let's build set with field names. It speeds up detection of new attributes in process().
-        currentAttributesSchemaFieldNamesSet = new HashSet();
+        currentAttributesSchemaFieldNamesSet = new HashSet<>();
         for (Schema.Field fieldFromCurrent: currentAttributesSchema.getFields()) {
             currentAttributesSchemaFieldNamesSet.add(fieldFromCurrent.name());
         }
@@ -69,22 +69,19 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
     @Override
     public void init(ProcessorContext context) {
         this.context = context;
-        entityKVStateStore = (KeyValueStore) context.getStateStore(entitiesStoreName);
+        entityKVStateStore = (KeyValueStore<String, GenericRecord>) context.getStateStore(entitiesStoreName);
     }
 
     @Override
-    public void process(String messageKey, SpecificRecord command) {
+    public void process(String messageKey, GenericRecord command) {
 
         String commandTypeName = command.getSchema().getFullName();
 
         if ( commandTypeName.equals(CreateEntityRequestV1.class.getName()) ) {
-            // (Note: The following cast operation is 'legal' because we use SpecificRecord and SpecificAvroSerde. )
-            CreateEntityRequestV1 request = (CreateEntityRequestV1) command;
-            createEntity(request);
+            createEntity(command);
 
         } else if ( commandTypeName.equals(DeleteEntityRequestV1.class.getName()) ) {
-            DeleteEntityRequestV1 request = (DeleteEntityRequestV1) command;
-            deleteEntity(request);
+            deleteEntity(command);
 
         } else {
             logger.info("process: Uknown request '{}'. Command ignored.", commandTypeName);
@@ -96,14 +93,14 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
 
     }
 
-    private void createEntity(CreateEntityRequestV1 createEntityRequest) {
+    private void createEntity(GenericRecord createEntityRequest) {
 
-        logger.info("process: CreateEntityRequestV1: uuid = {}", createEntityRequest.getUuid() );
+        logger.info("process: CreateEntityRequestV1: uuid = {}", createEntityRequest.get(CreateEntityRequestV1FieldNames.UUID) );
 
         // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
-        String entityKey = createEntityRequest.getEntityIdInSubdomain().toString();
+        String entityKey = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
         if (logger.isDebugEnabled()) {
             logger.debug("process: CreateEntityRequestV1: entityKey = {}", entityKey);
             logger.debug("process: CreateEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
@@ -128,17 +125,23 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
         }
     }
 
-    private GenericRecord createNewEntity(CreateEntityRequestV1 createEntityRequest) {
+    private GenericRecord createNewEntity(GenericRecord createEntityRequest) {
 
+        GenericRecord entityAttributesFromRequest = (GenericRecord) createEntityRequest.get(
+                CreateEntityRequestV1FieldNames.ENTITY_ATTRIBUTES);
+
+        // If unknown attributes exist in entity provided in the request
+        //   then we create a new schema for EntityV1.
+        provideNewSchemaIfNeeded(entityAttributesFromRequest);
+
+        // Create a new entity and fill it with content.
         GenericRecord newEntity = new GenericData.Record(currentEntitySchema);
-
         newEntity.put(EntityV1FieldNames.UUID, UUID.randomUUID().toString());
         newEntity.put(EntityV1FieldNames.ENTRY_DATE, System.currentTimeMillis());
-        newEntity.put(EntityV1FieldNames.ENTITY_TYPE_NAME, createEntityRequest.getEntityTypeName());
-        newEntity.put(EntityV1FieldNames.ENTITY_SUBDOMAIN_NAME, createEntityRequest.getEntitySubdomainName());
-        newEntity.put(EntityV1FieldNames.ENTITY_ID_IN_SUBDOMAIN, createEntityRequest.getEntityIdInSubdomain());
-
-        GenericRecord newAttributes = createAttributes( createEntityRequest.getEntityAttributes() );
+        newEntity.put(EntityV1FieldNames.ENTITY_TYPE_NAME, createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_TYPE_NAME));
+        newEntity.put(EntityV1FieldNames.ENTITY_SUBDOMAIN_NAME, createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME));
+        newEntity.put(EntityV1FieldNames.ENTITY_ID_IN_SUBDOMAIN, createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN));
+        GenericRecord newAttributes = createAttributes( entityAttributesFromRequest );
         if (newAttributes != null) {
             newEntity.put(EntityV1FieldNames.ATTRIBUTES, newAttributes);
         }
@@ -146,32 +149,95 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
         return newEntity;
     }
 
-    private GenericRecord createAttributes(EntityAttributes entityAttributesFromRequest) {
+    private void provideNewSchemaIfNeeded(GenericRecord entityAttributesFromRequest) {
+
+        logger.debug("provideNewSchemaIfNeeded: entityAttributesFromRequest '{}'.", entityAttributesFromRequest);
 
         if (entityAttributesFromRequest == null) {
-            return null; // record with attributes is optional, so it may be null in Request (and in Entity)
+            return; // record with attributes is optional (i.e. it may be null in Request (and in Entity))
         }
 
-        // Let's verify whether we need to create a new Schema for Entities.
-        boolean newSchemaIsRequired = false;
-        for (Schema.Field fieldFromRequest: entityAttributesFromRequest.getSchema().getFields()) {
-            if (! currentAttributesSchemaFieldNamesSet.contains(fieldFromRequest.name()) ) {
-                // We have at least one new field.
-                newSchemaIsRequired = true;
-                break;
+        ArrayList<Schema.Field> missingFieldsList = new ArrayList<>();
+
+        // Let's verify whether we need to create a new Schema version for EntityV1.
+        for (Schema.Field fieldFromRequest : entityAttributesFromRequest.getSchema().getFields()) {
+            String fieldName = fieldFromRequest.name();
+            logger.debug("provideNewSchemaIfNeeded: check for existence of entity attribute '{}'.", fieldName);
+            if (!currentAttributesSchemaFieldNamesSet.contains(fieldName)) {
+                logger.debug("provideNewSchemaIfNeeded: This attribute does not exist '{}'. A new schema is required.", fieldName);
+                missingFieldsList.add(fieldFromRequest);
             }
         }
 
-        if (newSchemaIsRequired) {
-            // (Note: This scenario is not frequent, a few cases a month,
-            //   so code clarity is more important then performance.)
+        if (missingFieldsList.size() > 0) {
+            // We have at least one new field, so a new schema is required.
 
-            // @TODO initEntitySchema();
+            // (Note: This case is not frequent (i.e. a few times a month),
+            //   so code clarity is more important than performance.)
 
-            throw new RuntimeException("@TODO");
+            // First we need to prepare new schema for record type. (the record with "name:Attributes" in EntityV1)
+            // (based on the old schema and with new fields added)
+            Schema newEntityAttributesRecordSchema = createNewSchemaForRecordEntityAttributes(missingFieldsList);
+
+            // Then we create a new version of EntityV1 schema.
+            Schema newSchema = createNewSchemaForEntity(newEntityAttributesRecordSchema);
+
+            // Let's use the new schema for new Entity objects. (SerDe will register this schema in Schema Registry.)
+            initEntitySchema(newSchema);
+        }
+    }
+
+    private Schema createNewSchemaForEntity(Schema newEntityAttributesRecordSchema) {
+
+        // The new version of the schema has the same name and namespace.
+        Schema newSchema = Schema.createRecord(currentEntitySchema.getName(), currentEntitySchema.getDoc(),
+                currentEntitySchema.getNamespace(), false);
+
+        // To the new version let's add all fields existing in the current version of EntityV1 schema.
+        ArrayList<Schema.Field> newFieldsList = new ArrayList<>();
+        for (Schema.Field f : currentEntitySchema.getFields()) {
+            Schema newFieldSchema;
+            if (EntityV1FieldNames.ATTRIBUTES.equals(f.name())) {
+                // For field 'attributes' we must use the new schema. (i.e. a schema with additional fields in record)
+                newFieldSchema = Schema.createUnion(Schema.create(Schema.Type.NULL), newEntityAttributesRecordSchema);
+            } else {
+                newFieldSchema = f.schema();
+            }
+            Schema.Field newField = new Schema.Field(f.name(), newFieldSchema, f.doc(), f.defaultVal());
+            newFieldsList.add(newField);
+        }
+        newSchema.setFields(newFieldsList);
+        return newSchema;
+    }
+
+    private Schema createNewSchemaForRecordEntityAttributes(ArrayList<Schema.Field> missingFieldsList) {
+        Schema oldEntityAttributesRecordSchema = currentEntitySchema.getField(EntityV1FieldNames.ATTRIBUTES)
+                .schema().getTypes().get(1);
+
+        // Gather existing fields.
+        ArrayList<Schema.Field> newFieldsList = new ArrayList<>();
+        for (Schema.Field f : oldEntityAttributesRecordSchema.getFields()) {
+            Schema.Field newField = new Schema.Field(f.name(), f.schema(), f.doc(), f.defaultVal());
+            newFieldsList.add(newField);
+        }
+        // Add new fields.
+        // @FUTURE check if it is a union (i.e. an optional field) - if not then correct it. We want (?) all fields to be optional.
+        for (Schema.Field f : missingFieldsList) {
+            Schema.Field newField = new Schema.Field(f.name(), f.schema(), f.doc(), f.defaultVal());
+            newFieldsList.add(newField);
         }
 
-        // Let's copy all attributes provided in this Request.
+        // Let's create the record schema. (it is the second one in the union defined in field entity_attributes, i.e. union of {null, record})
+        Schema newEntityAttributesRecordSchema = Schema.createRecord(oldEntityAttributesRecordSchema.getName(),
+                oldEntityAttributesRecordSchema.getDoc(), oldEntityAttributesRecordSchema.getNamespace(), false);
+        newEntityAttributesRecordSchema.setFields(newFieldsList);
+
+        return newEntityAttributesRecordSchema;
+    }
+
+    private GenericRecord createAttributes(GenericRecord entityAttributesFromRequest) {
+
+            // Let's copy all attributes provided in this Request.
         GenericRecord newAttributes = new GenericData.Record(currentAttributesSchema);
         for (Schema.Field fieldFromRequest: entityAttributesFromRequest.getSchema().getFields()) {
             newAttributes.put(fieldFromRequest.name(), entityAttributesFromRequest.get(fieldFromRequest.pos()));
@@ -180,14 +246,14 @@ public class CommandProcessor implements Processor<String, SpecificRecord> {
         return newAttributes;
     }
 
-    private void deleteEntity(DeleteEntityRequestV1 deleteEntityRequest) {
+    private void deleteEntity(GenericRecord deleteEntityRequest) {
 
-        logger.info("process: DeleteEntityRequestV1: uuid = {}", deleteEntityRequest.getUuid());
+        logger.info("process: DeleteEntityRequestV1: uuid = {}", deleteEntityRequest.get(CreateEntityRequestV1FieldNames.UUID));
 
         // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
-        String entityKey = deleteEntityRequest.getEntityIdInSubdomain().toString();
+        String entityKey = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
         if (logger.isDebugEnabled()) {
             logger.debug("process: DeleteEntityRequestV1: entityKey = {}", entityKey);
             logger.debug("process: DeleteEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",

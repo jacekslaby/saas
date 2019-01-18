@@ -45,7 +45,7 @@ public class ProcessingTopology {
         //   use the same topics)
 
         // Both topics have messages with different values, so we need different Serdes.
-        final Serde<SpecificRecord> commandSerde = createCommandSerde(config.getSchemaRegistryUrl()); // SpecificRecord because this topic has different classes as values
+        final GenericAvroSerde commandSerde = createCommandSerde(config.getSchemaRegistryUrl()); // Note: topic has different classes as values
         final GenericAvroSerde entitySerde = createEntitySerde(config.getSchemaRegistryUrl());
 
         // Let's prepare a local store for keeping current EntityV1 values in memory.
@@ -113,7 +113,7 @@ public class ProcessingTopology {
     /**
      * Creates Serde for commands topic.
      */
-    private static <T extends SpecificRecord> Serde<T> createCommandSerde(String schemaRegistryUrl) {
+    private static GenericAvroSerde createCommandSerde(String schemaRegistryUrl) {
 
         // Our values are encoded as Avro schemas objects so we need to configure a Serde with an access to Schema Registry.
         //
@@ -133,15 +133,9 @@ public class ProcessingTopology {
         // )
         serdeConfig.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
 
-        // We want to receive POJOs (e.g. CreateEntityRequestV1), so we cannot use GenericAvroSerde.
-        //  (see also: https://dzone.com/articles/kafka-avro-serialization-and-the-schema-registry
-        //    https://stackoverflow.com/questions/31207768/generic-conversion-from-pojo-to-avro-record
-        //  )
-        // Instead we have:
-        serdeConfig.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
+        // We want to receive GenericRecords.
+        final GenericAvroSerde newSerde = new GenericAvroSerde();
 
-        final Serde<T> newSerde = new SpecificAvroSerde<>();
-        //
         // We must call configure.
         // (see also https://github.com/confluentinc/kafka-streams-examples/blob/5.0.1-post/src/test/java/io/confluent/examples/streams/SpecificAvroIntegrationTest.java )
         newSerde.configure(serdeConfig, false); // `false` because this Serde is for record/message values, not keys
