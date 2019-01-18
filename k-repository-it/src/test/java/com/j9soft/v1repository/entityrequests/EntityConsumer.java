@@ -31,20 +31,25 @@ public class EntityConsumer {
 
     public void skipOldEntities() {
         this.consumer.seekToEnd( this.consumer.assignment() );
+
+        // Unnecessary poll() but it is a necessary workaround.
+        // (Otherwise consumer does not move to current end offsets right now
+        //   and current offsets are lost, which defeats the purpose of the test scenario.)
+        //
+        // See also: https://stackoverflow.com/questions/28561147/how-to-read-data-using-kafka-consumer-api-from-beginning
+        //  " call poll(), then do a seekToBeginning() and then again call poll() if you want all the records from the start. "
+        consumer.poll(Duration.ofSeconds(1));
     }
 
+    /**
+     * Retrieves the entities published since the last poll.
+     * Keeps their order from the topic. Supports tombstones (i.e. delete) and updates.
+     */
     public List<EntityV1> pollAllNewEntities() {
 
-        List<EntityV1> result = new ArrayList<>();
-
-        ConsumerRecords<String, EntityV1> records = consumer.poll(Duration.ofSeconds(2));
-        for (ConsumerRecord<String, EntityV1> record : records) {
-            // @TODO remove duplicates, i.e. support for updates
-            String key = record.key();
-            EntityV1 value = record.value();
-            result.add(value);
-        }
-
+        logger.info("pollAllNewEntities: start");
+        List<EntityV1> result = pollFromCurrentPosition();
+        logger.info("pollAllNewEntities: result.size={}", result.size());
         return result;
     }
 
@@ -60,8 +65,14 @@ public class EntityConsumer {
         // See also: https://stackoverflow.com/questions/28561147/how-to-read-data-using-kafka-consumer-api-from-beginning
         //  " call poll(), then do a seekToBeginning() and then again call poll() if you want all the records from the start. "
         consumer.poll(Duration.ofSeconds(1));
-
         this.consumer.seekToBeginning( this.consumer.assignment() );
+
+        List<EntityV1> result = pollFromCurrentPosition();
+        logger.info("pollAllExistingEntities: result.size={}", result.size());
+        return result;
+    }
+
+    private List<EntityV1> pollFromCurrentPosition() {
 
         List<EntityV1> resultList = new ArrayList<>();
         // @TODO  we cannot use String as a key
@@ -98,9 +109,6 @@ public class EntityConsumer {
                 result.add(entity);
             }
         }
-
-        logger.info("pollAllExistingEntities: result.size={}", result.size());
-
         return result;
     }
 

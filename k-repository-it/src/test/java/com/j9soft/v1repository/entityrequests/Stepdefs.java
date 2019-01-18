@@ -13,9 +13,10 @@ import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.number.OrderingComparison.lessThanOrEqualTo;
@@ -51,30 +52,38 @@ public class Stepdefs {
     @Given("^I skip old Entities and I listen for new Entities on EntitiesTopic$")
     public void i_skip_old_Entities_and_I_wait_for_new_Entities_on_EntitiesTopic() {
 
+        logger.info("i_skip_old_Entities_and_I_wait_for_new_Entities_on_EntitiesTopic: start");
         consumer.skipOldEntities();
+        logger.info("i_skip_old_Entities_and_I_wait_for_new_Entities_on_EntitiesTopic: end");
     }
 
     @Then("^I waited enough$")
-    public void i_waited_enough() {
+    public void i_waited_enough() throws InterruptedException {
 
-        receivedEntities = consumer.pollAllNewEntities();
-
-        // @TODO remove below lines in order to do a real check
-        receivedEntities = new ArrayList<>();
-        receivedEntities.add( SourceAlarms.A.buildEntity() );
-        receivedEntities.add( SourceAlarms.B.buildEntity() );
+        logger.info("i_waited_enough: start");
+        TimeUnit.SECONDS.sleep(3);
+        logger.info("i_waited_enough: end");
     }
 
     @Given("^Entity SourceAlarm \"([^\"]*)\" does not exist$")
-    public void entity_SourceAlarm_does_not_exist(String entityLabel) {
+    public void entity_SourceAlarm_does_not_exist(String entityLabel) throws Exception {
 
         EntityV1 alarmThatShouldNotExist = SourceAlarms.forLabel(entityLabel).buildEntity();
+        String alarmKeyThatShouldNotExist = alarmThatShouldNotExist.getEntityIdInSubdomain().toString();
         // Let's load all entities existing in the topic.
         receivedEntities = consumer.pollAllExistingEntities();
 
-        // Browse them all and fail if anyone matches the SourceAlarm that should not exist.
+        // Browse them all and delete if anyone matches the SourceAlarm that should not exist.
         for (EntityV1 entity: receivedEntities) {
-            assertNotEquals(alarmThatShouldNotExist.getEntityIdInSubdomain(), entity.getEntityIdInSubdomain());
+            String entityKey = entity.getEntityIdInSubdomain().toString();
+
+            logger.info("alarmThatShouldNotExist.key = '{}', received entity key= '{}'",
+                    alarmKeyThatShouldNotExist, entityKey);
+
+            if (alarmKeyThatShouldNotExist.equals( entityKey )) {   // btw: it must be toString() ! Otherwise the equal ones are not discovered.
+                logger.info("removing SourceAlarm with key = '{}'", entityKey);
+                producer.sendNewRequest(buildDeleteEntityRequest(entity));
+            }
         }
     }
 
@@ -110,10 +119,15 @@ public class Stepdefs {
     }
 
     @Then("^I should receive Entity SourceAlarm \"([^\"]*)\"$")
-    public void i_should_receive_Entity_SourceAlarm(String entityLabel) {
+    public void i_should_receive_Entity_SourceAlarm(String entityLabel) throws IOException {
 
-        EntityV1 receivedEntity = receivedEntities.remove(0);
         EntityV1 expectedEntity = SourceAlarms.forLabel(entityLabel).buildEntity();
+
+        // Note: Due to partitions it is possible (and correct)
+        //  that entities from different partitions arrive in an order different from the one specified in scenario.
+        //  So, we need to search within the received entities.
+        EntityV1 receivedEntity = locateReceivedEntityByKey(expectedEntity.getEntityIdInSubdomain().toString());
+        logger.info("i_should_receive_Entity_SourceAlarm: receivedEntity: {}", receivedEntity.getEntityIdInSubdomain().getClass());
 
         // We must check contents of Entity objects as they are not implementing equals(). (avro generated classes)
         // And additionally we want to ignore properties: uuid, entry_date, event_time.
@@ -142,8 +156,26 @@ public class Stepdefs {
                 receivedEntity.getEntryDate(), lessThanOrEqualTo(System.currentTimeMillis()));
     }
 
+    private EntityV1 locateReceivedEntityByKey(String expectedEntityKey) {
+        EntityV1 receivedEntity = null;
+
+        // Browse them all and delete if anyone matches the SourceAlarm that should not exist.
+        for (EntityV1 entity: receivedEntities) {
+            String receivedEntityKey = entity.getEntityIdInSubdomain().toString();
+            if (expectedEntityKey.equals(receivedEntityKey)) {
+                receivedEntity = entity;
+                break;
+            }
+        }
+
+        return receivedEntity;
+    }
+
     @Then("^I should receive (\\d+) Entities$")
     public void i_should_receive_Entities(int expectedCount) {
+
+        receivedEntities = consumer.pollAllNewEntities();
+
         assertEquals("Unexpected number of Entities received", expectedCount, receivedEntities.size());
     }
 
@@ -151,11 +183,6 @@ public class Stepdefs {
     public void i_poll_all_existing_Entities_from_Repository() {
 
         receivedEntities = consumer.pollAllExistingEntities();
-
-//        // @TODO remove below lines in order to do a real check
-//        receivedEntities = new ArrayList<>();
-//        receivedEntities.add( SourceAlarms.A.buildEntity() );
-//        receivedEntities.add( SourceAlarms.B.buildEntity() );
     }
 
     @When("^I send UknownEntityRequest I should receive exception$")
