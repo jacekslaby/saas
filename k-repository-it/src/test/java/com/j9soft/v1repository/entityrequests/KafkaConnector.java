@@ -92,9 +92,9 @@ public class KafkaConnector {
         //     "I haven't seen any working example of this. Not even a single one."
         // )
         producerProps.put(KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY, RecordNameStrategy.class.getName());
-        // btw: Default is 'auto register schemas=true' so we need to put 'false' in order to discover uknown schemas.
-        // @TODO Uncomment this when a script to register schemas is available.  (BUT we have our unknown schema, so rather auto true must stay ??)
-        //producerProps.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false");
+        // btw: Default is 'auto register schemas=true' so we need to put 'false' in order to discover unknown schemas. (and receive an exception)
+        // (Note: schemas required for these Integration Tests are loaded by maven during pre-integration-test phase.)
+        producerProps.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, "false");
 
         // Create a new producer instance.
         KafkaProducer<String, Object> producer = new KafkaProducer<>(producerProps);

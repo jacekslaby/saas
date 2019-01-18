@@ -18,6 +18,12 @@
       <url>https://packages.confluent.io/maven/</url>
     </repository>
   </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>confluent</id>
+      <url>https://packages.confluent.io/maven/</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <dependencies>
 
@@ -150,6 +156,34 @@
         </executions>
       </plugin>
       
+      <plugin>
+        <groupId>io.confluent</groupId>
+        <artifactId>kafka-schema-registry-maven-plugin</artifactId>
+        <version>5.1.0</version>
+        <configuration>
+            <schemaRegistryUrls>
+                <!-- @TODO Add support to read from env variable GRIT_SCHEMA_REGISTRY_URL (defined in docker-compose.yml)-->
+                <param>http://schema-registry:8081</param>
+            </schemaRegistryUrls>
+            <subjects>
+                <com.j9soft.krepository.v1.entitiesmodel.EntityV1>src/main/avro/entity-v1.avsc</com.j9soft.krepository.v1.entitiesmodel.EntityV1>
+                <com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1>src/main/avro/create-entity-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1>
+                <com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1>src/main/avro/delete-entity-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1>
+            </subjects>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>register</goal>
+            </goals>
+          </execution>
+        </executions>
+        <goals>
+          <goal>register</goal>
+        </goals>
+      </plugin>
+
       <plugin>
         <groupId>io.fabric8</groupId>
         <artifactId>docker-maven-plugin</artifactId>

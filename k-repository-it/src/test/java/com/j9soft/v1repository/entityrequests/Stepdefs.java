@@ -9,6 +9,7 @@ import cucumber.api.java.After;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
+import org.apache.kafka.common.errors.SerializationException;
 import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,18 +186,22 @@ public class Stepdefs {
         receivedEntities = consumer.pollAllExistingEntities();
     }
 
-    @When("^I send UknownEntityRequest I should receive exception$")
+    @When("^I send UnknownEntityRequest I should receive exception$")
     public void i_send_UknownEntityRequest() throws Exception {
 
         try {
             producer.sendNewRequest(
                     UknownEntityRequestV1.newBuilder().setUuid(UUID.randomUUID().toString())
                             .build());
-        } catch (Exception e) {
-            // @TODO how to make this more specific ? (and not to catch irrelevant potential exceptions)
+        } catch (SerializationException e) {
+
+            if (e.getCause().getMessage().startsWith("Subject not found")) {
+                return;
+            }
+            logger.info("i_send_UknownEntityRequest: unknown exception: ", e);
         }
-        // @TODO Uncomment this when a script to register schemas is available.
-        //fail("An exception about unknown request should have been thrown.");
+
+        fail("An exception 'RestClientException: Subject not found' should have been thrown.");
     }
 
     @After
