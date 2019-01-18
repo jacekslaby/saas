@@ -22,6 +22,25 @@ mvn docker:build
 
 ## Development
 
+### Shortcuts
+
+```
+# stop previous run
+./run-dev-docker-clean.sh 
+
+# start zookeeper, kafka, schema-registry and register required schemas
+./run-dev-docker-compose.sh 
+
+# Setup the environment
+set KR_BOOTSTRAP_SERVERS=kafka:9092
+set KR_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+set KR_REPOSITORY_NAME=prodxphone-saas
+# start K-Repository locally  (i.e. not in docker)
+mvn compile exec:java
+```
+
+### Start one by one
+
 ```
 # (Note: if you want to clear data from the previous run then use: docker-compose -f docker-compose-dev.yml rm -fs
 #   or manually remove all containers using docker-compose rm)
@@ -71,4 +90,28 @@ set KR_REPOSITORY_NAME=prodxphone-saas
 # start K-Repository locally  (i.e. not in docker)
 mvn compile exec:java
 (or: mvn package & java -jar target/k-repository.jar)
+```
+
+### How to browse messages on topics
+
+https://docs.confluent.io/current/streams/kafka-streams-examples/docs/index.html
+https://docs.confluent.io/current/schema-registry/docs/serializer-formatter.html
+
+```
+# commands
+docker-compose exec schema-registry     kafka-avro-console-consumer         --bootstrap-server kafka:9092         --topic prodxphone-saas-v1-commands-topic --from-beginning
+
+docker-compose exec schema-registry     kafka-avro-console-consumer         --bootstrap-server kafka:9092         --topic prodxphone-saas-v1-commands-topic --from-beginning --property print.key=true   --property print.schema.ids=true   --property schema.id.separator=: --key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+
+# commands with partition id and offsets
+docker run --name consume-commands --rm --network=krepository_kafka_backend_net evpavel/kt kt consume -topic prodxphone-saas-v1-commands-topic -brokers kafka:9092
+docker rm consume-commands -f
+
+
+# entities (btw: kafka-avro-console-consumer crashes on null message values when started with --property print.schema.ids=true)
+docker-compose exec schema-registry     kafka-avro-console-consumer         --bootstrap-server kafka:9092         --topic prodxphone-saas-v1-entities-topic --from-beginning --property print.key=true --property print.timestamp=true  --key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+
+# entities with partition id and offsets
+docker run --name consume-entities --rm --network=krepository_kafka_backend_net evpavel/kt kt consume -topic prodxphone-saas-v1-entities-topic -brokers kafka:9092
+docker rm consume-entities -f
 ```
