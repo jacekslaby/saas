@@ -189,6 +189,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
     private Schema createNewSchemaForEntity(Schema newEntityAttributesRecordSchema) {
 
+        // https://stackoverflow.com/questions/47161408/extend-avro-schema-via-java-api-by-adding-one-field
+
         // The new version of the schema has the same name and namespace.
         Schema newSchema = Schema.createRecord(currentEntitySchema.getName(), currentEntitySchema.getDoc(),
                 currentEntitySchema.getNamespace(), false);
