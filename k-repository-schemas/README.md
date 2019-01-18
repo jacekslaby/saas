@@ -49,6 +49,13 @@ mvn schema-registry:test-compatibility
 
 ```
 
+## Browsing schemas
+
+http://schema-registry:8081/subjects
+http://schema-registry:8081/subjects/com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1/versions
+http://schema-registry:8081/subjects/com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1/versions/latest
+http://schema-registry:8081/subjects/com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1/versions/2
+
 ## Docker image
 
 ```
