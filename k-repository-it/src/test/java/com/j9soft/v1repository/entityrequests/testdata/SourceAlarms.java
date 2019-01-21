@@ -14,12 +14,14 @@ import java.util.UUID;
 import static org.junit.Assert.assertNotNull;
 
 public enum SourceAlarms {
-    A("A"),
-    B("B");
+    A("A", "X"),
+    B("B", "X"),
+    C("C", "Y");
 
-    SourceAlarms(String uniqueLabel) {
-        // @TODO read SourceAlarm<uniqueLabel>.json
+    SourceAlarms(String uniqueLabel, String subdomainName) {
+        // @TODO read SourceAlarm<uniqueLabel>.json (in order to have more attributes populated, with different values)
         this.uniqueLabel = uniqueLabel;
+        this.subdomainName = subdomainName;
     }
 
     private static Map<String, SourceAlarms> labelsToSourceAlarms = new HashMap<>();
@@ -38,16 +40,17 @@ public enum SourceAlarms {
         return result;
     }
 
-    private static String SOURCE_ALARM = "SourceAlarm";
+    public static String SOURCE_ALARM = "SourceAlarm";
     private static String ENTITY_SUBDOMAIN_NAME = "Xphone:AdapterSiemens_nw";
     private static String ENTITY_ATTRIBUTE_NAME__NOTIFICATION_IDENTIFIER = "NotificationIdentifier";
 
     private String uniqueLabel;
+    private String subdomainName;
 
     public CreateEntityRequestV1 buildCreateEntityRequest() {
 
         EntityAttributes entityAttributes = EntityAttributes.newBuilder()
-                .setNotificationIdentifier(ENTITY_SUBDOMAIN_NAME + ":" + uniqueLabel)
+                .setNotificationIdentifier(uniqueLabel)
                 .setPerceivedSeverity("1")
                 .build();
 
@@ -55,8 +58,8 @@ public enum SourceAlarms {
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
                 .setEntityTypeName(SOURCE_ALARM)
-                .setEntitySubdomainName(ENTITY_SUBDOMAIN_NAME)
-                .setEntityIdInSubdomain(ENTITY_SUBDOMAIN_NAME + ":" + uniqueLabel)
+                .setEntitySubdomainName(subdomainName)
+                .setEntityIdInSubdomain(uniqueLabel)
                 .setEntityAttributes(entityAttributes)
                 .build();
     }
@@ -64,7 +67,7 @@ public enum SourceAlarms {
     public EntityV1 buildEntity() throws IOException {
 
         Attributes attributes = Attributes.newBuilder()
-                .setNotificationIdentifier(ENTITY_SUBDOMAIN_NAME + ":" + uniqueLabel)
+                .setNotificationIdentifier(uniqueLabel)
                 .setPerceivedSeverity("1")
                 .build();
 
@@ -76,8 +79,8 @@ public enum SourceAlarms {
                     .setUuid(UUID.randomUUID().toString())
                     .setEntryDate(System.currentTimeMillis())
                     .setEntityTypeName(SOURCE_ALARM)
-                    .setEntitySubdomainName(ENTITY_SUBDOMAIN_NAME)
-                    .setEntityIdInSubdomain(ENTITY_SUBDOMAIN_NAME + ":" + uniqueLabel)
+                    .setEntitySubdomainName(subdomainName)
+                    .setEntityIdInSubdomain(uniqueLabel)
                     .setAttributes(attributes)
                     .build().toByteBuffer());
     }

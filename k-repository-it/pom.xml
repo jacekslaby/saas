@@ -169,6 +169,8 @@
                 <com.j9soft.krepository.v1.entitiesmodel.EntityV1>src/main/avro/entity-v1.avsc</com.j9soft.krepository.v1.entitiesmodel.EntityV1>
                 <com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1>src/main/avro/create-entity-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1>
                 <com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1>src/main/avro/delete-entity-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1>
+                <com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1>src/main/avro/resync-all-start-subdomain-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.ResyncAllStartSubdomainRequestV1>
+                <com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1>src/main/avro/resync-all-end-subdomain-request-v1.avsc</com.j9soft.krepository.v1.commandsmodel.ResyncAllEndSubdomainRequestV1>
             </subjects>
         </configuration>
         <executions>

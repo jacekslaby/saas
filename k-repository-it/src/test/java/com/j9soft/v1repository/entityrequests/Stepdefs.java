@@ -1,7 +1,6 @@
 package com.j9soft.v1repository.entityrequests;
 
-import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
-import com.j9soft.krepository.v1.commandsmodel.UknownEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.*;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 import com.j9soft.v1repository.entityrequests.testdata.SourceAlarms;
 import cucumber.api.Scenario;
@@ -103,7 +102,7 @@ public class Stepdefs {
         logger.info("no_Entity_SourceAlarm_exists: end");
     }
 
-    public DeleteEntityRequestV1 buildDeleteEntityRequest(EntityV1 entity) {
+    private DeleteEntityRequestV1 buildDeleteEntityRequest(EntityV1 entity) {
         return DeleteEntityRequestV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
@@ -115,6 +114,12 @@ public class Stepdefs {
 
     @When("^I send CreateEntityRequest with SourceAlarm \"([^\"]*)\"$")
     public void i_send_CreateEntityRequest_with_SourceAlarm(String sourceAlarmLabel) throws Exception {
+
+        producer.sendNewRequest( SourceAlarms.forLabel(sourceAlarmLabel).buildCreateEntityRequest() );
+    }
+
+    @Given("^I send CreateEntityRequest with SourceAlarm \"([^\"]*)\" in Subdomain \"([^\"]*)\"$")
+    public void i_send_CreateEntityRequest_with_SourceAlarm_in_Subdomain(String sourceAlarmLabel, String subdomainName) throws Exception {
 
         producer.sendNewRequest( SourceAlarms.forLabel(sourceAlarmLabel).buildCreateEntityRequest() );
     }
@@ -208,6 +213,16 @@ public class Stepdefs {
         fail("An exception 'RestClientException: Subject not found' should have been thrown.");
     }
 
+    @Given("^I send ResyncAllStartSubdomainRequest for Subdomain \"([^\"]*)\"$")
+    public void i_send_ResyncAllStartSubdomainRequest_for_Subdomain(String subdomainName) throws Exception {
+        producer.sendNewRequest( buildResyncAllStartSubdomainRequest(subdomainName) );
+    }
+
+    @Given("^I send ResyncAllEndSubdomainRequest for Subdomain \"([^\"]*)\"$")
+    public void i_send_ResyncAllEndSubdomainRequest_for_Subdomain(String subdomainName) throws Exception {
+        producer.sendNewRequest( buildResyncAllEndSubdomainRequest(subdomainName) );
+    }
+
     @After
     public void cleanup(Scenario scenario){
         // Cleanup - close the producer.
@@ -218,5 +233,23 @@ public class Stepdefs {
         if (consumer != null) {
             consumer.close();
         }
+    }
+
+    private ResyncAllStartSubdomainRequestV1 buildResyncAllStartSubdomainRequest(String subdomainName) {
+        return ResyncAllStartSubdomainRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(System.currentTimeMillis())
+                .setEntityTypeName(SourceAlarms.SOURCE_ALARM)
+                .setEntitySubdomainName(subdomainName)
+                .build();
+    }
+
+    private ResyncAllEndSubdomainRequestV1 buildResyncAllEndSubdomainRequest(String subdomainName) {
+        return ResyncAllEndSubdomainRequestV1.newBuilder()
+                .setUuid(UUID.randomUUID().toString())
+                .setEntryDate(System.currentTimeMillis())
+                .setEntityTypeName(SourceAlarms.SOURCE_ALARM)
+                .setEntitySubdomainName(subdomainName)
+                .build();
     }
 }
