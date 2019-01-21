@@ -3,6 +3,7 @@ package com.j9soft.v1repository.entityrequests;
 import com.j9soft.krepository.v1.commandsmodel.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.PartitionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +25,8 @@ public class RequestProducer {
      */
     // @TODO @Autowired
     public RequestProducer() {
-        this.topicName = KafkaConnector.getCommandsTopicName();
-        this.producer = KafkaConnector.connectProducer();
+        topicName = KafkaConnector.getCommandsTopicName();
+        producer = KafkaConnector.connectProducer();
     }
 
     public void sendNewRequest(CreateEntityRequestV1 request) throws ExecutionException, InterruptedException {
@@ -33,45 +34,51 @@ public class RequestProducer {
         logger.info("RequestUuid:{} - sendNewRequest(CreateEntityRequestV1)", request.getUuid());
 
         ProducerRecord<String, Object> record = new ProducerRecord<>(
-                this.topicName, request.getEntityIdInSubdomain().toString(), request);
-        this.producer.send(record).get();
+                topicName, request.getEntityIdInSubdomain().toString(), request);
+        producer.send(record).get();
     }
 
     public void sendNewRequest(DeleteEntityRequestV1 request) throws ExecutionException, InterruptedException {
         logger.info("RequestUuid:{} - sendNewRequest(DeleteEntityRequestV1)", request.getUuid());
 
         ProducerRecord<String, Object> record = new ProducerRecord<>(
-                this.topicName, request.getEntityIdInSubdomain().toString(), request);
-        this.producer.send(record).get();
+                topicName, request.getEntityIdInSubdomain().toString(), request);
+        producer.send(record).get();
     }
 
     public void sendNewRequest(ResyncAllStartSubdomainRequestV1 request) throws ExecutionException, InterruptedException {
         logger.info("RequestUuid:{} - sendNewRequest(ResyncAllStartSubdomainRequestV1)", request.getUuid());
 
-        // @TODO send to every partition, with key "dummy"
-        ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
-        this.producer.send(record).get();
+        // Subdomain request must be send to every partition of commands topic.
+        for (PartitionInfo partitionInfo: producer.partitionsFor(topicName)) {
+            ProducerRecord<String, Object> record = new ProducerRecord<>(topicName, partitionInfo.partition(), 
+                    request.getUuid().toString(), request);
+            producer.send(record).get();
+        }
     }
 
     public void sendNewRequest(ResyncAllEndSubdomainRequestV1 request) throws ExecutionException, InterruptedException {
         logger.info("RequestUuid:{} - sendNewRequest(ResyncAllEndSubdomainRequestV1)", request.getUuid());
 
-        // @TODO send to every partition, with key "dummy"
-        ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
-        this.producer.send(record).get();
+        // Subdomain request must be send to every partition of commands topic.
+        for (PartitionInfo partitionInfo: producer.partitionsFor(topicName)) {
+            ProducerRecord<String, Object> record = new ProducerRecord<>(topicName, partitionInfo.partition(),
+                    request.getUuid().toString(), request);
+            producer.send(record).get();
+        }
     }
 
     public void sendNewRequest(UknownEntityRequestV1 request) throws ExecutionException, InterruptedException {
 
         logger.info("RequestUuid:{} - sendNewRequest(UknownEntityRequestV1)", request.getUuid());
 
-        ProducerRecord<String, Object> record = new ProducerRecord<>(this.topicName, request.getUuid().toString(), request);
-        this.producer.send(record).get();
+        ProducerRecord<String, Object> record = new ProducerRecord<>(topicName, request.getUuid().toString(), request);
+        producer.send(record).get();
     }
 
     public void close() {
-        if (this.producer != null) {
-            this.producer.close();
+        if (producer != null) {
+            producer.close();
         }
     }
 }

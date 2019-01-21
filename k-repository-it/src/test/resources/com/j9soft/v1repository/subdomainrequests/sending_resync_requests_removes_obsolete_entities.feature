@@ -21,6 +21,7 @@ Feature: Sending resync requests removes obsolete entities
     Given no Entity SourceAlarm exists
     And I send CreateEntityRequest with SourceAlarm "A" in Subdomain "X"
     And I send CreateEntityRequest with SourceAlarm "B" in Subdomain "X"
+    And I send CreateEntityRequest with SourceAlarm "D" in Subdomain "Y"
     And I send ResyncAllStartSubdomainRequest for Subdomain "Y"
     And I send ResyncAllEndSubdomainRequest for Subdomain "Y"
     And I waited enough

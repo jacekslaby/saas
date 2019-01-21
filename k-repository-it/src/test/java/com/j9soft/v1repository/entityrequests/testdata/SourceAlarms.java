@@ -16,7 +16,8 @@ import static org.junit.Assert.assertNotNull;
 public enum SourceAlarms {
     A("A", "X"),
     B("B", "X"),
-    C("C", "Y");
+    C("C", "X"),
+    D("D", "Y");
 
     SourceAlarms(String uniqueLabel, String subdomainName) {
         // @TODO read SourceAlarm<uniqueLabel>.json (in order to have more attributes populated, with different values)
