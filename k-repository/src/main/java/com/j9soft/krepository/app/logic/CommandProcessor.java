@@ -1,23 +1,20 @@
 package com.j9soft.krepository.app.logic;
 
-import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1;
-import com.j9soft.krepository.v1.commandsmodel.CreateEntityRequestV1FieldNames;
-import com.j9soft.krepository.v1.commandsmodel.DeleteEntityRequestV1;
+import com.j9soft.krepository.v1.commandsmodel.*;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1;
 import com.j9soft.krepository.v1.entitiesmodel.EntityV1FieldNames;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Logic to build new value for an Entity based on received Request.
@@ -47,6 +44,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
     private Schema currentEntitySchema;
     private Schema currentAttributesSchema;
     private Set<String> currentAttributesSchemaFieldNamesSet;
+    private Map<String, Set<String>> subdomainsInResync = new HashMap<>(); // key is subdomain name (because subdomains are resynchronized independently)
 
     public CommandProcessor(String entitiesStoreName) {
 
@@ -83,6 +81,12 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         } else if ( commandTypeName.equals(DeleteEntityRequestV1.class.getName()) ) {
             deleteEntity(command);
 
+        } else if ( commandTypeName.equals(ResyncAllStartSubdomainRequestV1.class.getName()) ) {
+            startSubdomainResync(command);
+
+        } else if ( commandTypeName.equals(ResyncAllEndSubdomainRequestV1.class.getName()) ) {
+            endSubdomainResync(command);
+
         } else {
             logger.info("process: Uknown request '{}'. Command ignored.", commandTypeName);
         }
@@ -97,16 +101,30 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
         logger.info("process: CreateEntityRequestV1: uuid = {}", createEntityRequest.get(CreateEntityRequestV1FieldNames.UUID) );
 
-        // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
+        // @FUTURE On entities topic the message key needs to be built also from KR_REPOSITORY_NAME
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
-        String entityKey = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+        //
+        // @TODO (First BDD) For entities topic the message key should contain: {entity_subdomain_name, entity_id_in_subdomain} (because it is a compacted topic)
+        // @TODO (First BDD) For state store the entityKey should contain: {entity_subdomain_name, entity_id_in_subdomain} (because it is a store of all subdomains)
+        // (e.g. different adapters provide the same notification_identifier - k-repository should store it. It may be reconciled by other subsystem downstream.)
+        //  (Note: When forwarding a _messsage_ it is fine to use only entity_id_in_subdomain.)
+        String entityIdInSubdomain = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+        String entitySubdomainName = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+        String entityKey = entityIdInSubdomain;
         if (logger.isDebugEnabled()) {
-            logger.debug("process: CreateEntityRequestV1: entityKey = {}", entityKey);
+            logger.debug("process: CreateEntityRequestV1: entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
+                    entityKey, entityIdInSubdomain, entitySubdomainName);
             logger.debug("process: CreateEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
                     entityKVStateStore, entityKVStateStore.approximateNumEntries());
         }
         GenericRecord currentEntityValue = entityKVStateStore.get(entityKey);
+
+        Set<String> keysOfSurvivingEntities = subdomainsInResync.get(entitySubdomainName);
+        if (keysOfSurvivingEntities != null) {
+            // We need to gather this entity for survival.
+            keysOfSurvivingEntities.add(entityIdInSubdomain);
+        }
 
         if (currentEntityValue != null) {
             // We do not change the already existing entity.  (btw: there is PutEntityRequest for this)
@@ -255,15 +273,24 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
-        String entityKey = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+        String entityIdInSubdomain = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+        String entitySubdomainName = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+        String entityKey = entityIdInSubdomain;
         if (logger.isDebugEnabled()) {
-            logger.debug("process: DeleteEntityRequestV1: entityKey = {}", entityKey);
+            logger.debug("process: DeleteEntityRequestV1: entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
+                    entityKey, entityIdInSubdomain, entitySubdomainName);
             logger.debug("process: DeleteEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
                     entityKVStateStore, entityKVStateStore.approximateNumEntries());
         }
         GenericRecord currentEntityValue = entityKVStateStore.get(entityKey);
 
         if (currentEntityValue != null) {
+            Set<String> keysOfSurvivingEntities = subdomainsInResync.get(entitySubdomainName);
+            if (keysOfSurvivingEntities != null) {
+                // We need to remove it. (e.g. in case it was delivered within this resync)
+                keysOfSurvivingEntities.remove(entityIdInSubdomain);
+            }
+
             // We delete the existing entity.
             context.forward(entityKey, null);  // (i.e. we publish null as a tombstone)
             entityKVStateStore.delete(entityKey);
@@ -276,4 +303,61 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         }
     }
 
+    private void startSubdomainResync(GenericRecord resyncAllStartSubdomainRequest) {
+
+        logger.info("process: ResyncAllStartSubdomainRequestV1: uuid = {}",
+                resyncAllStartSubdomainRequest.get(ResyncAllStartSubdomainRequestV1FieldNames.UUID));
+
+        String subdomainName = resyncAllStartSubdomainRequest.get(ResyncAllStartSubdomainRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+        if (logger.isDebugEnabled()) {
+            logger.debug("process: ResyncAllStartSubdomainRequestV1: subdomainName = {}", subdomainName);
+            logger.debug("process: ResyncAllStartSubdomainRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
+                    entityKVStateStore, entityKVStateStore.approximateNumEntries());
+        }
+
+        // Let's prepare in-memory structures to gather surviving entities.
+        //  (Note: we overwrite in case the same subdomain is already in resync.)
+        subdomainsInResync.put(subdomainName, new HashSet<>());
+
+        logger.info("process: ResyncAllStartSubdomainRequestV1: Resync started. For domain '{}'.", subdomainName);
+    }
+
+    private void endSubdomainResync(GenericRecord resyncAllEndSubdomainRequest) {
+
+        logger.info("process: ResyncAllEndSubdomainRequestV1: uuid = {}",
+                resyncAllEndSubdomainRequest.get(ResyncAllEndSubdomainRequestV1FieldNames.UUID));
+
+        String subdomainName = resyncAllEndSubdomainRequest.get(ResyncAllEndSubdomainRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+        if (logger.isDebugEnabled()) {
+            logger.debug("process: ResyncAllEndSubdomainRequestV1: subdomainName = {}", subdomainName);
+            logger.debug("process: ResyncAllEndSubdomainRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
+                    entityKVStateStore, entityKVStateStore.approximateNumEntries());
+        }
+
+        Set<String> keysOfSurvivingEntities = subdomainsInResync.remove(subdomainName);
+        if (keysOfSurvivingEntities == null) {
+            logger.info("process: ResyncAllEndSubdomainRequestV1: Resync end ignored. Earlier there was no ResyncAllStartSubdomainRequestV1 for domain '{}'.", subdomainName);
+            return;
+        }
+
+        // Let's delete all not surviving entities.
+        int countOfDeletedEntities = 0;
+        final KeyValueIterator<String, GenericRecord> allKVIterator = entityKVStateStore.all();
+        while (allKVIterator.hasNext()) {
+            KeyValue<String, GenericRecord> storeEntry = allKVIterator.next();
+            String entitySubdomainName = storeEntry.value.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+            String entityIdInSubdomain = storeEntry.value.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+            if (subdomainName.equals(entitySubdomainName)) {
+                if (!keysOfSurvivingEntities.remove(entityIdInSubdomain)) {
+                    // It means that this id was not delivered during resync. So we should delete it.
+                    context.forward(storeEntry.key, null);  // (i.e. we publish null as a tombstone)
+                    entityKVStateStore.delete(storeEntry.key);
+                    countOfDeletedEntities++;
+                }
+            }
+        }
+
+        logger.info("process: ResyncAllEndSubdomainRequestV1: Resync finished. For domain '{}', deleted entities count: {}.",
+                subdomainName, String.valueOf(countOfDeletedEntities));
+    }
 }
