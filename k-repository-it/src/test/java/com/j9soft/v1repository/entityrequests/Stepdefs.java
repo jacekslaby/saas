@@ -175,9 +175,13 @@ public class Stepdefs {
     @Then("^I should receive (\\d+) Entities$")
     public void i_should_receive_Entities(int expectedCount) {
 
-        receivedEntities = consumer.pollAllNewEntities();
-
         assertEquals("Unexpected number of Entities received", expectedCount, receivedEntities.size());
+    }
+
+    @When("^I poll for new Entities from Repository$")
+    public void i_poll_for_new_Entities_from_Repository() {
+
+        receivedEntities = consumer.pollAllNewEntities();
     }
 
     @When("^I poll all existing Entities from Repository$")

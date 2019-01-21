@@ -12,6 +12,7 @@ Feature: Sending create requests produces new entities
     When I send CreateEntityRequest with SourceAlarm "A"
     And I send CreateEntityRequest with SourceAlarm "B"
     And I waited enough
+    And I poll for new Entities from Repository
     Then I should receive 2 Entities
     And I should receive Entity SourceAlarm "A"
     And I should receive Entity SourceAlarm "B"
@@ -20,6 +21,7 @@ Feature: Sending create requests produces new entities
     Given no Entity SourceAlarm exists
     When I send CreateEntityRequest with SourceAlarm "A"
     And I send CreateEntityRequest with SourceAlarm "B"
+    And I waited enough
     And I poll all existing Entities from Repository
     Then I should receive 2 Entities
     And I should receive Entity SourceAlarm "A"
