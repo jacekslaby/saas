@@ -26,3 +26,16 @@ Feature: Sending create requests produces new entities
     Then I should receive 2 Entities
     And I should receive Entity SourceAlarm "A"
     And I should receive Entity SourceAlarm "B"
+
+  Scenario: Send 2 CreateEntityRequests with the same IDs but different Subdomains and receive 2 Entities
+    Given Entity SourceAlarm "AinSubdomainX" does not exist
+    And Entity SourceAlarm "AinSubdomainY" does not exist
+    And I skip old Entities and I listen for new Entities on EntitiesTopic
+    When I send CreateEntityRequest with SourceAlarm "AinSubdomainX"
+    And I send CreateEntityRequest with SourceAlarm "AinSubdomainY"
+    And I waited enough
+    And I poll for new Entities from Repository
+    Then I should receive 2 Entities
+    And I should receive Entity SourceAlarm "AinSubdomainX"
+    And I should receive Entity SourceAlarm "AinSubdomainY"
+

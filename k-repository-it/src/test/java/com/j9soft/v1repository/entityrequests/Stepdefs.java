@@ -119,7 +119,7 @@ public class Stepdefs {
     }
 
     @Given("^I send CreateEntityRequest with SourceAlarm \"([^\"]*)\" in Subdomain \"([^\"]*)\"$")
-    public void i_send_CreateEntityRequest_with_SourceAlarm_in_Subdomain(String sourceAlarmLabel, String subdomainName) throws Exception {
+    public void i_send_CreateEntityRequest_with_SourceAlarm_in_Subdomain(String sourceAlarmLabel) throws Exception {
 
         producer.sendNewRequest( SourceAlarms.forLabel(sourceAlarmLabel).buildCreateEntityRequest() );
     }

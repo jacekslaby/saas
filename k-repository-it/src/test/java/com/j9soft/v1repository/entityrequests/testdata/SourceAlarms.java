@@ -14,15 +14,19 @@ import java.util.UUID;
 import static org.junit.Assert.assertNotNull;
 
 public enum SourceAlarms {
-    A("A", "X"),
-    B("B", "X"),
-    C("C", "X"),
-    D("D", "Y");
+    A("A", "X", "A"),
+    AinSubdomainX("AinSubdomainX", "X", "A"),
+    AinSubdomainY("AinSubdomainY", "Y", "A"),
+    B("B", "X", "B"),
+    BinSubdomainX("BinSubdomainX", "X", "B"),
+    CinSubdomainX("CinSubdomainX", "X", "C"),
+    DinSubdomainY("DinSubdomainY", "Y", "D");
 
-    SourceAlarms(String uniqueLabel, String subdomainName) {
+    SourceAlarms(String uniqueLabel, String subdomainName, String idInSubdomain) {
         // @TODO read SourceAlarm<uniqueLabel>.json (in order to have more attributes populated, with different values)
         this.uniqueLabel = uniqueLabel;
         this.subdomainName = subdomainName;
+        this.idInSubdomain = idInSubdomain;
     }
 
     private static Map<String, SourceAlarms> labelsToSourceAlarms = new HashMap<>();
@@ -47,11 +51,12 @@ public enum SourceAlarms {
 
     private String uniqueLabel;
     private String subdomainName;
+    private String idInSubdomain;
 
     public CreateEntityRequestV1 buildCreateEntityRequest() {
 
         EntityAttributes entityAttributes = EntityAttributes.newBuilder()
-                .setNotificationIdentifier(uniqueLabel)
+                .setNotificationIdentifier(idInSubdomain)
                 .setPerceivedSeverity("1")
                 .build();
 
@@ -60,7 +65,7 @@ public enum SourceAlarms {
                 .setEntryDate(System.currentTimeMillis())
                 .setEntityTypeName(SOURCE_ALARM)
                 .setEntitySubdomainName(subdomainName)
-                .setEntityIdInSubdomain(uniqueLabel)
+                .setEntityIdInSubdomain(idInSubdomain)
                 .setEntityAttributes(entityAttributes)
                 .build();
     }
@@ -68,7 +73,7 @@ public enum SourceAlarms {
     public EntityV1 buildEntity() throws IOException {
 
         Attributes attributes = Attributes.newBuilder()
-                .setNotificationIdentifier(uniqueLabel)
+                .setNotificationIdentifier(idInSubdomain)
                 .setPerceivedSeverity("1")
                 .build();
 
@@ -81,7 +86,7 @@ public enum SourceAlarms {
                     .setEntryDate(System.currentTimeMillis())
                     .setEntityTypeName(SOURCE_ALARM)
                     .setEntitySubdomainName(subdomainName)
-                    .setEntityIdInSubdomain(uniqueLabel)
+                    .setEntityIdInSubdomain(idInSubdomain)
                     .setAttributes(attributes)
                     .build().toByteBuffer());
     }
