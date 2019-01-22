@@ -39,8 +39,8 @@ public class ProcessingTopology {
         // Our key is just the same string as in property 'entity_id_in_subdomain' of a request object. (e.g. NotificationIdentifier of a SourceAlarm)
         final Serde<String> keySerde = Serdes.String();
         //
-        // @FUTURE Entities topic needs avro serde for keys.
-        // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
+        // @FUTURE Entities topic needs avro serde for keys. (Hm... but it would not be user friendly for browsing topic contents)
+        // @FUTURE On entities topic the message key needs to be built also from KR_REPOSITORY_NAME
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
 

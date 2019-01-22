@@ -40,7 +40,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
     // The current Entity schema may be enhanced with additional fields during runtime.
     // (It happens when CommandProcessor receives a request with additional entity attributes.
     //  In such case a new schema is created in process() method. It is also registered in Schema Registry by Avro SerDe.)
-    // (@TODO: Investigate whether KStreams assure that only one thread executes process() method. Otherwise synchronized needed.)
+    // (Note: This approach is thread safe due to KStreams threading model: "Each thread can execute one or more stream tasks".
+    //   See also: https://docs.confluent.io/current/streams/architecture.html#threading-model )
     private Schema currentEntitySchema;
     private Schema currentAttributesSchema;
     private Set<String> currentAttributesSchemaFieldNamesSet;
@@ -64,6 +65,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void init(ProcessorContext context) {
         this.context = context;
@@ -101,17 +103,21 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
         logger.info("process: CreateEntityRequestV1: uuid = {}", createEntityRequest.get(CreateEntityRequestV1FieldNames.UUID) );
 
+        String entityIdInSubdomain = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+        String entitySubdomainName = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+
         // @FUTURE On entities topic the message key needs to be built also from KR_REPOSITORY_NAME
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
         //
-        // @TODO (First BDD) For entities topic the message key should contain: {entity_subdomain_name, entity_id_in_subdomain} (because it is a compacted topic)
-        // @TODO (First BDD) For state store the entityKey should contain: {entity_subdomain_name, entity_id_in_subdomain} (because it is a store of all subdomains)
-        // (e.g. different adapters provide the same notification_identifier - k-repository should store it. It may be reconciled by other subsystem downstream.)
-        //  (Note: When forwarding a _messsage_ it is fine to use only entity_id_in_subdomain.)
-        String entityIdInSubdomain = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
-        String entitySubdomainName = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
-        String entityKey = entityIdInSubdomain;
+        // For entities topic the message key contains: {entity_subdomain_name, entity_id_in_subdomain} (because it is a compacted topic)
+        // For state store the entityKey contains: {entity_subdomain_name, entity_id_in_subdomain} (because it is a store of all subdomains)
+        // (E.g. different adapters may provide the same notification_identifier and k-repository should store it.
+        //   If need be it may be reconciled by other subsystem downstream.)
+        // (Note: It would be safer to use a structure more complicated than just a String, (e.g. a two field structure or an array)
+        //  but it would not be user friendly for browsing topic contents. So, we assume that character ';' is not used in subdomain names.)
+        // (Note: It is more efficient to have ID first (rather than Subdomain name), because it speeds up equals comparisons.)
+        String entityKey = entityIdInSubdomain + ";" + entitySubdomainName;
         if (logger.isDebugEnabled()) {
             logger.debug("process: CreateEntityRequestV1: entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
                     entityKey, entityIdInSubdomain, entitySubdomainName);
@@ -275,7 +281,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         //   use the same topics)
         String entityIdInSubdomain = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
         String entitySubdomainName = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
-        String entityKey = entityIdInSubdomain;
+        String entityKey = entityIdInSubdomain + ";" + entitySubdomainName;
         if (logger.isDebugEnabled()) {
             logger.debug("process: DeleteEntityRequestV1: entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
                     entityKey, entityIdInSubdomain, entitySubdomainName);
