@@ -75,10 +75,7 @@ public class EntityConsumer {
     private List<EntityV1> pollFromCurrentPosition() {
 
         List<EntityV1> resultList = new ArrayList<>();
-        // @TODO  we cannot use String as a key
-        //Map<EntityKeyV1, EntityV1> positions = new HashMap<>();
         Map<String, Integer> positions = new HashMap<>();
-
 
         ConsumerRecords<String, EntityV1> records = consumer.poll(Duration.ofSeconds(5));
         logger.info("pollAllExistingEntities: records.count={}", records.count());
@@ -109,6 +106,7 @@ public class EntityConsumer {
                 result.add(entity);
             }
         }
+        logger.info("pollAllExistingEntities: result={}", result);
         return result;
     }
 

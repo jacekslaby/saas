@@ -132,7 +132,8 @@ public class Stepdefs {
         // Note: Due to partitions it is possible (and correct)
         //  that entities from different partitions arrive in an order different from the one specified in scenario.
         //  So, we need to search within the received entities.
-        EntityV1 receivedEntity = locateReceivedEntityByKey(expectedEntity.getEntityIdInSubdomain().toString());
+        EntityV1 receivedEntity = locateReceivedEntity(expectedEntity.getEntityIdInSubdomain().toString(),
+                expectedEntity.getEntitySubdomainName().toString());
         logger.info("i_should_receive_Entity_SourceAlarm: receivedEntity: {}", receivedEntity.getEntityIdInSubdomain().getClass());
 
         // We must check contents of Entity objects as they are not implementing equals(). (avro generated classes)
@@ -162,13 +163,14 @@ public class Stepdefs {
                 receivedEntity.getEntryDate(), lessThanOrEqualTo(System.currentTimeMillis()));
     }
 
-    private EntityV1 locateReceivedEntityByKey(String expectedEntityKey) {
+    private EntityV1 locateReceivedEntity(String expectedEntityKey, String expectedEntitySubdomainName) {
         EntityV1 receivedEntity = null;
 
         // Browse them all and delete if anyone matches the SourceAlarm that should not exist.
         for (EntityV1 entity: receivedEntities) {
             String receivedEntityKey = entity.getEntityIdInSubdomain().toString();
-            if (expectedEntityKey.equals(receivedEntityKey)) {
+            String receivedEntitySubdomainName = entity.getEntitySubdomainName().toString();
+            if (expectedEntityKey.equals(receivedEntityKey) && expectedEntitySubdomainName.equals(receivedEntitySubdomainName)) {
                 receivedEntity = entity;
                 break;
             }
