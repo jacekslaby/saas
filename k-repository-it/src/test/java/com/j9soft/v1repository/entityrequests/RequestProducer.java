@@ -33,6 +33,13 @@ public class RequestProducer {
 
         logger.info("RequestUuid:{} - sendNewRequest(CreateEntityRequestV1)", request.getUuid());
 
+        // Note: Messages regarding the same entity MUST always be sent to the same partition.
+        //   The easiest way to achieve it is to use string value of entityIdInSubdomain as a Kafka message key,
+        //     as it is done in the code below.
+        //   (It works because default partitioner always assigns the same key value to the same partition number,
+        //     and, on top of that, it does a good job of _evenly_ spreading the load between partitions.)
+        //   (Note: It is fine if another subdomain also sends a kafka message with the same key value,
+        //     because k-repository does not use message keys for its logic. It uses entityIdInSubdomain and entitySubdomainName.)
         ProducerRecord<String, Object> record = new ProducerRecord<>(
                 topicName, request.getEntityIdInSubdomain().toString(), request);
         producer.send(record).get();
