@@ -1,5 +1,8 @@
 Feature: Sending resync requests removes obsolete entities
-  Sending ResyncAllStartSubdomainRequest followed by ResyncAllEndSubdomainRequest results in old Entities being removed from the EntitiesTopic.
+  Sending ResyncAllStartSubdomainRequest followed by ResyncAllEndSubdomainRequest results in old Entities being deleted from the EntitiesTopic.
+  For every deleted Entity a DeleteEntityRequest is published to EntitiesTopic.
+  Resynchronization is done within set of Entities from a Subdomain specified in ResyncAllStartSubdomainRequest and ResyncAllEndSubdomainRequest.
+  Entities created and updated between start and end of a resynchronization are not deleted, i.e. they are not perceived as obsolete ones.
 
   Background:
     Given I am connected as producer to CommandsTopic

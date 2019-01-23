@@ -1,5 +1,16 @@
 Feature: Sending create requests produces new entities
-  Sending CreateEntityRequests results in new Entities being published to the EntitiesTopic.
+  Sending CreateEntityRequests to CommandsTopic results in new Entities being published to the EntitiesTopic by the logic of k-repository.
+  Each Entity has a Type.
+  Each Entity belongs to exactly one Subdomain. Each Entity has a unique Id within its Subdomain. Id is string.
+  Entity unique key consists of its Subdomain and Id. CreateEntityRequest with an already existing Entity is ignored.
+  (@TODO Entity unique key also contains Type.)
+  Entity may have zero or more attributes populated. Entities of the same Type may have different attributes.
+  It is possible to define attributes by enhancing Avro schema of CreateEntityRequest. Every attribute is optional (i.e. nullable).
+  EntitiesTopic is partitioned by Entity unique key, i.e. all changes of an Entity are saved in the same partition.
+  EntitiesTopic is a compacted topic, i.e. when an Entity is deleted there is a tombstone (i.e. null) value published.
+  EntitiesTopic contains records with key containing Entity unique key and with value containing Entity.
+  CommandsTopic contains records with key containing request UUID and with value containing request. CommandsTopic is not compacted.
+  Sending DeleteEntityRequests to CommandsTopic results in tombstones being published to the EntitiesTopic by the logic of k-repository.
 
   Background:
     Given I am connected as producer to CommandsTopic
