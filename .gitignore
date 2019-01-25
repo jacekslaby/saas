@@ -1,5 +1,6 @@
 .idea
 .toDelete
 *.log
+*.log.*
 PS
 target

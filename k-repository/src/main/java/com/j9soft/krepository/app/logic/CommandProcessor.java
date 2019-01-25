@@ -11,8 +11,7 @@ import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.KeyValueStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
 import java.util.*;
 
@@ -32,6 +31,16 @@ import java.util.*;
 public class CommandProcessor implements Processor<String, GenericRecord> {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandProcessor.class);
+    // Separate requestLogger in order to be able to separate these request processing (i.e. frequent) log entries
+    //  from the other ones. (btw: The other ones convey status and we want to have them, i.e. we want to avoid a logfile being rolled over.)
+    private static final Logger requestLogger = LoggerFactory.getLogger(CommandProcessor.class.getName() + ".requests");
+    private static final String MDC_TASK_ID = "task-id";
+    private static final String MDC_KEY_UUID = "uuid";
+    private static final String MDC_KEY_COMMAND_TYPE = "command-type";
+    private static final String CREATE_COMMAND = CreateEntityRequestV1.class.getSimpleName();
+    private static final String DELETE_COMMAND = DeleteEntityRequestV1.class.getSimpleName();
+    private static final String RESYNC_START_COMMAND = ResyncAllStartSubdomainRequestV1.class.getSimpleName();
+    private static final String RESYNC_END_COMMAND = ResyncAllEndSubdomainRequestV1.class.getSimpleName();
 
     private ProcessorContext context;
     private String entitiesStoreName;
@@ -70,6 +79,10 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
     public void init(ProcessorContext context) {
         this.context = context;
         entityKVStateStore = (KeyValueStore<String, GenericRecord>) context.getStateStore(entitiesStoreName);
+
+        logger.info("init: applicationId={}, taskId={}, processor={}, entityKVStateStore={}, entityKVStateStore.approximateNumEntries() = {}, appConfigs={}",
+                context.applicationId(), context.taskId(), this,
+                entityKVStateStore, entityKVStateStore.approximateNumEntries(), context.appConfigs());
     }
 
     @Override
@@ -77,31 +90,39 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
         String commandTypeName = command.getSchema().getFullName();
 
-        if ( commandTypeName.equals(CreateEntityRequestV1.class.getName()) ) {
-            createEntity(command);
+        try {
+            if (commandTypeName.equals(CreateEntityRequestV1.class.getName())) {
+                createEntity(command);
 
-        } else if ( commandTypeName.equals(DeleteEntityRequestV1.class.getName()) ) {
-            deleteEntity(command);
+            } else if (commandTypeName.equals(DeleteEntityRequestV1.class.getName())) {
+                deleteEntity(command);
 
-        } else if ( commandTypeName.equals(ResyncAllStartSubdomainRequestV1.class.getName()) ) {
-            startSubdomainResync(command);
+            } else if (commandTypeName.equals(ResyncAllStartSubdomainRequestV1.class.getName())) {
+                startSubdomainResync(command);
 
-        } else if ( commandTypeName.equals(ResyncAllEndSubdomainRequestV1.class.getName()) ) {
-            endSubdomainResync(command);
+            } else if (commandTypeName.equals(ResyncAllEndSubdomainRequestV1.class.getName())) {
+                endSubdomainResync(command);
 
-        } else {
-            logger.info("process: Uknown request '{}'. Command ignored.", commandTypeName);
+            } else {
+                requestLogger.info("RESULT: Command ignored. Uknown command type '{}' in request {}. ", commandTypeName, command);
+            }
+        } finally {
+            // Let's remove the diagnostic context.
+            MDC.remove(MDC_KEY_UUID);
+            MDC.remove(MDC_KEY_COMMAND_TYPE);
         }
     }
 
     @Override
     public void close() {
-
+        logger.info("close: applicationId={}, taskId={}, processor={}, entityKVStateStore={}, entityKVStateStore.approximateNumEntries() = {}, appConfigs={}",
+                context.applicationId(), context.taskId(), this,
+                entityKVStateStore, entityKVStateStore.approximateNumEntries(), context.appConfigs());
     }
 
     private void createEntity(GenericRecord createEntityRequest) {
 
-        logger.info("process: CreateEntityRequestV1: uuid = {}", createEntityRequest.get(CreateEntityRequestV1FieldNames.UUID) );
+        fillMDCAndLogStart(CREATE_COMMAND, createEntityRequest, CreateEntityRequestV1FieldNames.UUID);
 
         String entityIdInSubdomain = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
         String entitySubdomainName = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
@@ -118,10 +139,10 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         //  but it would not be user friendly for browsing topic contents. So, we assume that character ';' is not used in subdomain names.)
         // (Note: It is more efficient to have ID first (rather than Subdomain name), because it speeds up equals comparisons.)
         String entityKey = entityIdInSubdomain + ";" + entitySubdomainName;
-        if (logger.isDebugEnabled()) {
-            logger.debug("process: CreateEntityRequestV1: entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
+        if (requestLogger.isDebugEnabled()) {
+            requestLogger.debug("entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
                     entityKey, entityIdInSubdomain, entitySubdomainName);
-            logger.debug("process: CreateEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
+            requestLogger.debug("entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
                     entityKVStateStore, entityKVStateStore.approximateNumEntries());
         }
         GenericRecord currentEntityValue = entityKVStateStore.get(entityKey);
@@ -134,7 +155,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
         if (currentEntityValue != null) {
             // We do not change the already existing entity.  (btw: there is PutEntityRequest for this)
-            logger.info("process: CreateEntityRequestV1: Command ignored. Already existing entity with key '{}'.", entityKey);
+            requestLogger.info("RESULT: Command ignored. Already existing entity with key '{}'.", entityKey);
 
         } else {
             // We need to create a new entity.
@@ -145,8 +166,17 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
             context.forward(entityKey, newEntityValue);
             entityKVStateStore.put(entityKey, newEntityValue);
 
-            logger.info("process: CreateEntityRequestV1: Entity created. New entity with key '{}'.", entityKey);
+            requestLogger.info("RESULT: Entity created. New entity with key '{}'.", entityKey);
         }
+    }
+
+    private void fillMDCAndLogStart(String commandType, GenericRecord request, String uuidFieldName) {
+        // Let's stamp each logged entry with request UUID.
+        MDC.put(MDC_KEY_UUID, Objects.toString(request.get(uuidFieldName)));
+        MDC.put(MDC_KEY_COMMAND_TYPE, commandType);
+        MDC.put(MDC_TASK_ID, Objects.toString(context.taskId()));
+
+        requestLogger.debug("START: request = {}", request);
     }
 
     private GenericRecord createNewEntity(GenericRecord createEntityRequest) {
@@ -175,7 +205,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
     private void provideNewSchemaIfNeeded(GenericRecord entityAttributesFromRequest) {
 
-        logger.debug("provideNewSchemaIfNeeded: entityAttributesFromRequest '{}'.", entityAttributesFromRequest);
+        requestLogger.debug("provideNewSchemaIfNeeded: entityAttributesFromRequest '{}'.", entityAttributesFromRequest);
 
         if (entityAttributesFromRequest == null) {
             return; // record with attributes is optional (i.e. it may be null in Request (and in Entity))
@@ -186,9 +216,9 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         // Let's verify whether we need to create a new Schema version for EntityV1.
         for (Schema.Field fieldFromRequest : entityAttributesFromRequest.getSchema().getFields()) {
             String fieldName = fieldFromRequest.name();
-            logger.debug("provideNewSchemaIfNeeded: check for existence of entity attribute '{}'.", fieldName);
+            requestLogger.debug("provideNewSchemaIfNeeded: check for existence of entity attribute '{}'.", fieldName);
             if (!currentAttributesSchemaFieldNamesSet.contains(fieldName)) {
-                logger.debug("provideNewSchemaIfNeeded: This attribute does not exist '{}'. A new schema is required.", fieldName);
+                requestLogger.debug("provideNewSchemaIfNeeded: This attribute does not exist '{}'. A new schema is required.", fieldName);
                 missingFieldsList.add(fieldFromRequest);
             }
         }
@@ -274,7 +304,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
     private void deleteEntity(GenericRecord deleteEntityRequest) {
 
-        logger.info("process: DeleteEntityRequestV1: uuid = {}", deleteEntityRequest.get(CreateEntityRequestV1FieldNames.UUID));
+        fillMDCAndLogStart(DELETE_COMMAND, deleteEntityRequest, CreateEntityRequestV1FieldNames.UUID);
 
         // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
@@ -282,10 +312,10 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         String entityIdInSubdomain = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
         String entitySubdomainName = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
         String entityKey = entityIdInSubdomain + ";" + entitySubdomainName;
-        if (logger.isDebugEnabled()) {
-            logger.debug("process: DeleteEntityRequestV1: entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
+        if (requestLogger.isDebugEnabled()) {
+            requestLogger.debug("entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
                     entityKey, entityIdInSubdomain, entitySubdomainName);
-            logger.debug("process: DeleteEntityRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
+            requestLogger.debug("entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
                     entityKVStateStore, entityKVStateStore.approximateNumEntries());
         }
         GenericRecord currentEntityValue = entityKVStateStore.get(entityKey);
@@ -301,23 +331,23 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
             context.forward(entityKey, null);  // (i.e. we publish null as a tombstone)
             entityKVStateStore.delete(entityKey);
 
-            logger.info("process: DeleteEntityRequestV1: Entity deleted. Entity with key '{}'.", entityKey);
+            requestLogger.info("RESULT: Entity deleted. Entity with key '{}'.", entityKey);
 
         } else {
             // We do not do anything for the already not existing entity.
-            logger.info("process: DeleteEntityRequestV1: Command ignored. Not existing entity with key '{}'.", entityKey);
+            requestLogger.info("RESULT: Command ignored. Not existing entity with key '{}'.", entityKey);
         }
     }
 
     private void startSubdomainResync(GenericRecord resyncAllStartSubdomainRequest) {
 
-        logger.info("process: ResyncAllStartSubdomainRequestV1: uuid = {}",
-                resyncAllStartSubdomainRequest.get(ResyncAllStartSubdomainRequestV1FieldNames.UUID));
+        fillMDCAndLogStart(RESYNC_START_COMMAND, resyncAllStartSubdomainRequest,
+                ResyncAllStartSubdomainRequestV1FieldNames.UUID);
 
         String subdomainName = resyncAllStartSubdomainRequest.get(ResyncAllStartSubdomainRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
-        if (logger.isDebugEnabled()) {
-            logger.debug("process: ResyncAllStartSubdomainRequestV1: subdomainName = {}", subdomainName);
-            logger.debug("process: ResyncAllStartSubdomainRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
+        if (requestLogger.isDebugEnabled()) {
+            requestLogger.debug("subdomainName = {}", subdomainName);
+            requestLogger.debug("entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
                     entityKVStateStore, entityKVStateStore.approximateNumEntries());
         }
 
@@ -325,24 +355,24 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         //  (Note: we overwrite in case the same subdomain is already in resync.)
         subdomainsInResync.put(subdomainName, new HashSet<>());
 
-        logger.info("process: ResyncAllStartSubdomainRequestV1: Resync started. For domain '{}'.", subdomainName);
+        requestLogger.info("RESULT: Resync started. For domain '{}'.", subdomainName);
     }
 
     private void endSubdomainResync(GenericRecord resyncAllEndSubdomainRequest) {
 
-        logger.info("process: ResyncAllEndSubdomainRequestV1: uuid = {}",
-                resyncAllEndSubdomainRequest.get(ResyncAllEndSubdomainRequestV1FieldNames.UUID));
+        fillMDCAndLogStart(RESYNC_END_COMMAND, resyncAllEndSubdomainRequest,
+                ResyncAllEndSubdomainRequestV1FieldNames.UUID);
 
         String subdomainName = resyncAllEndSubdomainRequest.get(ResyncAllEndSubdomainRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
-        if (logger.isDebugEnabled()) {
-            logger.debug("process: ResyncAllEndSubdomainRequestV1: subdomainName = {}", subdomainName);
-            logger.debug("process: ResyncAllEndSubdomainRequestV1: entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
+        if (requestLogger.isDebugEnabled()) {
+            requestLogger.debug("subdomainName = {}", subdomainName);
+            requestLogger.debug("entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
                     entityKVStateStore, entityKVStateStore.approximateNumEntries());
         }
 
         Set<String> keysOfSurvivingEntities = subdomainsInResync.remove(subdomainName);
         if (keysOfSurvivingEntities == null) {
-            logger.info("process: ResyncAllEndSubdomainRequestV1: Resync end ignored. Earlier there was no ResyncAllStartSubdomainRequestV1 for domain '{}'.", subdomainName);
+            requestLogger.info("RESULT: Resync end ignored. Earlier there was no ResyncAllStartSubdomainRequestV1 for domain '{}'.", subdomainName);
             return;
         }
 
@@ -363,7 +393,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
             }
         }
 
-        logger.info("process: ResyncAllEndSubdomainRequestV1: Resync finished. For domain '{}', deleted entities count: {}.",
+        requestLogger.info("RESULT: Resync finished. For domain '{}', deleted entities count: {}.",
                 subdomainName, String.valueOf(countOfDeletedEntities));
     }
 }
