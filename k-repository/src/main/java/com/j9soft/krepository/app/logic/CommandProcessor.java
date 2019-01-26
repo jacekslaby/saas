@@ -88,9 +88,11 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
     @Override
     public void process(String messageKey, GenericRecord command) {
 
-        String commandTypeName = command.getSchema().getFullName();
+        boolean runtimeExceptionWasThrown = true;
 
         try {
+            String commandTypeName = command.getSchema().getFullName();
+
             if (commandTypeName.equals(CreateEntityRequestV1.class.getName())) {
                 createEntity(command);
 
@@ -106,7 +108,14 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
             } else {
                 requestLogger.info("RESULT: Command ignored. Uknown command type '{}' in request {}. ", commandTypeName, command);
             }
+            runtimeExceptionWasThrown = false;
+
         } finally {
+            if (runtimeExceptionWasThrown) {
+                // Let's log additional context details in order to facilitate debugging.
+                logger.error("FAILURE: RuntimeException was thrown. Processing context: applicationId={}, taskId={}, messageKey '{}', command '{}'",
+                        context.applicationId(), context.taskId(), messageKey, command);
+            }
             // Let's remove the diagnostic context.
             MDC.remove(MDC_KEY_UUID);
             MDC.remove(MDC_KEY_COMMAND_TYPE);
