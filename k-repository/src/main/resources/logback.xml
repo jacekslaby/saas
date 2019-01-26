@@ -20,7 +20,7 @@
     <file>logback-krepository-requests.log</file>
 
     <encoder>
-      <pattern>%date %level [%thread] [%X{task-id}] [%X{uuid}] [%X{command-type}] - %msg%n</pattern>
+      <pattern>%date %-5level [%X{task-id}] [%X{uuid}] [%X{command-type}] - %msg%n</pattern>
     </encoder>
   </appender>
 
