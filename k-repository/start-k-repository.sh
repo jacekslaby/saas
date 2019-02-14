@@ -72,4 +72,4 @@ done
 >&2 echo "INFO: Schema registry & Avro schemas are ready, topics are ready - starting k-repository now..."
 
 cd /app
-#exec java -jar k-repository.jar
+exec java -jar k-repository.jar
