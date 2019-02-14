@@ -17,6 +17,7 @@ docker-compose down
 
 ```
 # build and put in local docker
+mvn package -Dmaven.test.skip=true
 mvn docker:build
 ```
 
@@ -37,6 +38,8 @@ set KR_SCHEMA_REGISTRY_URL=http://schema-registry:8081
 set KR_REPOSITORY_NAME=prodxphone-saas
 # start K-Repository locally  (i.e. not in docker)
 mvn compile exec:java
+# alternatively start in docker
+docker run -e KR_BOOTSTRAP_SERVERS=kafka:9092 -e "KR_SCHEMA_REGISTRY_URL=http://schema-registry:8081" -e KR_REPOSITORY_NAME=prodxphone-saas --name k-repository --rm --network=krepository_kafka_backend_net -it j9soft/k-repository:latest
 ```
 
 ### Start one by one
