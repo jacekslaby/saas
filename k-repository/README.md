@@ -16,7 +16,13 @@ docker-compose down
 ## Docker image
 
 ```
-# build and put in local docker
+# first build and package an auxiliary tool
+cd ../tool-kafka-topics
+mvn package
+cp target/kafka-topics-jar-with-dependencies.jar k-repository
+# @TODO come with a better idea to do it ^^^^^   (maybe build image from the parent directory with option -f and in Dockerfile use directory names when COPY'ing. But it's not intuitive ?)  (perhaps put k-repository/Dockerfile in another directory, e.g. 'docker/k-repository/Dockerfile')
+
+# build and put image in local docker
 mvn package -Dmaven.test.skip=true
 mvn docker:build
 ```
@@ -68,6 +74,8 @@ docker-compose up -d schema-registry
 # wait 20 seconds for correct setup (schema-registry needs to become ready, because adding schemas writes them to SR and _schemas topic)
 sleep 20
 
+# (Note: Avro schemas registration is added to K-Repository container so it is no longer required to do it. BUT currently it registers junit Avro schemas, so for now we keep the below lines for reference.)
+
 # Install Avro schemas.
 #  (btw: in order to verify them you can use:
 #    http://schema-registry:8081/subjects
@@ -79,8 +87,7 @@ sleep 20
 #  )
 docker-compose run --rm  k-repository-schemas
 
-# wait 10 seconds for correct setup (topics get created and schemas are registered)
-sleep 10
+# (Note: A health check logic is added to K-Repository container so it is no longer required to wait 10 seconds for correct setup (topics get created and schemas are registered))
 
 # (assure that 'kafka' and 'schema-registry' point to your `docker-machine ip`, e.g. 192.168.99.100 on virtualbox
 # e.g. by adding to hosts file)
