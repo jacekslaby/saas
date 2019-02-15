@@ -53,9 +53,6 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName} ECS host
           PropagateAtLaunch: true
-    CreationPolicy:
-      ResourceSignal:
-        Timeout: PT15M
     UpdatePolicy:
       AutoScalingRollingUpdate:
         MinInstancesInService: 1
