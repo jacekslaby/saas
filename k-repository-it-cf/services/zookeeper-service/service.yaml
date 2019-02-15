@@ -30,7 +30,7 @@ Resources:
           Memory: 128
           PortMappings:
             - ContainerPort: 2181
-              HostPort:2181
+              HostPort: 2181
           Environment:
             - Name: ZOOKEEPER_CLIENT_PORT
               Value: 2181
