@@ -33,6 +33,9 @@ $ saas_run_on_local_docker__run_all_it.sh
 
 ```
 mvn docker:build
+
+# alternatively start in docker
+docker run -e GRIT_BOOTSTRAP_SERVERS=kafka:9092 -e "GRIT_SCHEMA_REGISTRY_URL=http://schema-registry:8081" -e GRIT_REPOSITORY_NAME=prodxphone-saas --name k-repository-it --rm --network=krepository_kafka_backend_net -it j9soft/k-repository-it:latest
 ```
 
 ## Running locally (not from Docker) during development
