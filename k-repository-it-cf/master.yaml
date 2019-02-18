@@ -53,3 +53,11 @@ Resources:
         Cluster: !GetAtt ECS.Outputs.Cluster
         DesiredCount: 1
 
+  KafkaService:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-west-2.amazonaws.com/k-repository-it-cf/services/kafka-service/service.yaml
+      Parameters:
+        Cluster: !GetAtt ECS.Outputs.Cluster
+        DesiredCount: 1
+
