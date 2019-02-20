@@ -1,0 +1,100 @@
+Description: >
+  This template contains the lambda function and CloudWatch events
+  to assure registration and deregistration of DNS names of ECS containers
+  in the Route53 private hosted zone.
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  PrivateZone:
+    Type: AWS::Route53::HostedZone
+    Description: Choose in which zone the service names are registered
+
+Resources:
+  RuleToRegisterInDNS:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Rule to register a name in DNS when new container is started
+      EventPattern:
+        source: 
+          - "aws.ecs"
+        detail-type: 
+          - "ECS Task State Change"
+        detail: 
+          lastStatus: 
+            - "RUNNING"
+      State: "ENABLED"
+      Targets:
+      - Arn: 
+          Fn::GetAtt: 
+            - "RegisterInDnsLambda"
+            - "Arn"
+        Id: StartStopLambda_Target
+
+  LambdaServiceRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "lambda.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies: 
+        - 
+          PolicyName: "CloudWatchEventsLambdaRoute53"
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: "Allow"
+                Action: "route53:ChangeResourceRecordSets"
+                Resource: !Ref PrivateZone
+              - Effect: "Allow"
+                Action: 
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*"
+                
+  RegisterInDnsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          PRIVATE_ZONE_ID: !Ref PrivateZone
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Role: !Ref LambdaServiceRole
+      Runtime: python3.6
+      Timeout: 10
+      Code:
+        ZipFile:
+          !Join
+          - '
+            '
+          -
+            - "import json"
+            - "import boto3"
+            - "def lambda_handler(event, context):"
+            - "    print('PRIVATE_ZONE_ID: ' + os.environ['PRIVATE_ZONE_ID']) "
+            - "    private_zone_id = os.environ['PRIVATE_ZONE_ID']) "
+            - "    # spit out event data"
+            - "    print('Received event: ' + json.dumps(event, indent=2)) "
+            - "    new_dns_name = ??"
+            - "    route53_client = boto3.client('route53')"
+            - "    response = route53_client.change_resource_record_sets("
+            - "        HostedZoneId=private_zone_id,"
+            - "        ChangeBatch={'Comment': 'ECS service registered', 'Changes': ["
+            - "                        {'Action': 'UPSERT', 'ResourceRecordSet': {"
+            - "                            'Name': new_dns_name, 'Type': 'CNAME', 'TTL': 60, 'ResourceRecords': [{'Value' : lbcanonical}]}"
+            - "                        }]"
+            - "                    }"
+            - "        )"
+            - "    print(response)"

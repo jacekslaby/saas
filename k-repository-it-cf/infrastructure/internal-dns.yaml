@@ -1,0 +1,27 @@
+Description: >
+  This template contains the Route53 private hosted zone required by our ECS stack.
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: Choose which VPC is associated with this zone
+
+Resources:
+  PrivateZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Comment: Private hosted zone for ECS k-repository Service Discovery
+      Name: !Sub ${EnvironmentName}.ecs.internal
+      VPCs:
+        - VPCId: !Ref VPC
+          VPCRegion: ${AWS::Region}
+      
+Outputs:
+  PrivateZone:
+    Description: A reference to the created private zone
+    Value: !Ref PrivateZone
+
