@@ -26,3 +26,10 @@ $ aws --profile admin s3 sync . s3://k-repository-it-cf
 #
 ```
 
+## @TODO
+
+ECS does not provide a sensible way for service discovery.
+Existing workarounds require a lot of effort to deploy.   https://github.com/nathanpeck/awesome-ecs  Service Discovery
+
+In branch 'add-aws-cf-service-discovery' there is an approach with Route53, Lambda and CloudWatch events.
+It is still not finished. 
