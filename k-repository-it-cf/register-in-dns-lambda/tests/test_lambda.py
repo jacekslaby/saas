@@ -12,7 +12,11 @@ from register_service_lambda import register_service_lambda
 import botocore
 orig = botocore.client.BaseClient._make_api_call
 
-changeResourceRecordSetsKwarg = None
+# Set a region because boto3 requires a non empty value.
+#  (It is not used when running the tests anyway, because of mocking. When executed within AWS Lambda the region is provided by AWS.)
+# See also: https://stackoverflow.com/questions/40377662/boto3-client-noregionerror-you-must-specify-a-region-error-only-sometimes
+#
+os.environ['AWS_DEFAULT_REGION'] = 'dummy'
 
 # Event to mock scenario when a container (task) is created.
 # (copied from: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_cwe_events.html )

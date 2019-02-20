@@ -9,7 +9,7 @@ def lambda_handler(event, context):
     
     private_zone_suffix = '@TODO .internal.'
     
-    ecs_client = boto3.client('ecs', '@todo')
+    ecs_client = boto3.client('ecs')
     
     # DescribeTaskDefinition - let's retrieve name(s) of the container(s) as specified in TaskDefinition
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.describe_task_definition
@@ -28,7 +28,7 @@ def lambda_handler(event, context):
 
     # DescribeInstances - get private DNS name for our EC2 instance
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.describe_instances
-    ec2_client = boto3.client('ec2', '@todo')
+    ec2_client = boto3.client('ec2')
     reservations = ec2_client.describe_instances(InstanceIds=[ec2_instance_id])
     ec2_instance_private_dns_name = reservations['Reservations'][0]['Instances'][0]['PrivateDnsName']
     
