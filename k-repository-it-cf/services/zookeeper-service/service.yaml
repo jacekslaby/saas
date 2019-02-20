@@ -1,0 +1,50 @@
+Description: >
+  This is an example of a long running ECS service that runs Zookeeper.
+
+Parameters:
+  Cluster:
+    Description: Please provide the ECS Cluster ID that this service should run on
+    Type: String
+
+  DesiredCount:
+    Description: How many instances of this task should we run across our cluster?
+    Type: Number
+    Default: 1
+
+Resources:
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Cluster
+      DesiredCount: !Ref DesiredCount
+      TaskDefinition: !Ref TaskDefinition
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: zookeeper-service
+      ContainerDefinitions:
+        - Name: zookeeper
+          Essential: true
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.eu-west-2.amazonaws.com/wurstmeister/zookeeper:3.4.9'
+          Memory: 128
+          PortMappings:
+            - ContainerPort: 2181
+              HostPort: 2181
+          Environment:
+            - Name: ZOOKEEPER_CLIENT_PORT
+              Value: 2181
+            - Name: ZOOKEEPER_TICK_TIME
+              Value: 2000
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref AWS::StackName
+      RetentionInDays: 365
+
