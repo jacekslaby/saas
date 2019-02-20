@@ -9,7 +9,7 @@ Description: >
   Finally, it deploys a ECS services (being parts of k-repository-it application)
   from images published in Amazon EC2 Container Registry (Amazon ECR).
 
-  Last Modified: 2019.02.15
+  Last Modified: 2019.02.19
   Author: Jacek
 
 Resources:
@@ -32,6 +32,22 @@ Resources:
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         VPC: !GetAtt VPC.Outputs.VPC
+
+  InternalDNS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-west-2.amazonaws.com/k-repository-it-cf/infrastructure/internal-dns.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        VPC: !GetAtt VPC.Outputs.VPC
+
+  ServiceDiscoveryDNS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.eu-west-2.amazonaws.com/k-repository-it-cf/infrastructure/service-discovery-dns.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        PrivateZone: !GetAtt InternalDNS.Outputs.PrivateZone
 
   ECS:
     Type: AWS::CloudFormation::Stack
