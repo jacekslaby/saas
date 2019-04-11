@@ -66,10 +66,17 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
     public CommandProcessor(String entitiesStoreName) {
 
+        // Name of the state store to be looked up from the Kafka Streams context.
         this.entitiesStoreName = entitiesStoreName;
+
+        // At the beginning we start with the schema delivered with KRepository.
+        //  (later, when new Entities come, it may change in runtime)
         initEntitySchema(EntityV1.getClassSchema());
     }
 
+    /**
+     * Configures this processor to use the given schema for Entities.
+     */
     private void initEntitySchema(Schema newEntitySchema) {
         currentEntitySchema = newEntitySchema;
         currentAttributesSchema = currentEntitySchema.getField(EntityV1FieldNames.ATTRIBUTES)
@@ -84,6 +91,10 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
     @SuppressWarnings("unchecked")
     @Override
+    /**
+     * Invoked by Kafka Streams framework at the beginning.
+     * The local state store needs to be set up here.
+     */
     public void init(ProcessorContext context) {
         this.context = context;
         entityKVStateStore = (KeyValueStore<String, GenericRecord>) context.getStateStore(entitiesStoreName);
@@ -95,6 +106,9 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
     }
 
     @Override
+    /**
+     * Process every message delivered by Kafka.
+     */
     public void process(String messageKey, GenericRecord command) {
 
         boolean runtimeExceptionWasThrown = true;
@@ -102,7 +116,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         try {
             String commandTypeName = command.getSchema().getFullName();
 
-            // (Ugly if-else statement because we depend on getSchema() API.)
+            // (Ugly if-else statement because it depends on capabilities of getSchema() API.)
 
             if (commandTypeName.equals(CreateEntityRequestV1.class.getName())) {
                 createEntity(command);
@@ -117,7 +131,7 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
                 endSubdomainResync(command);
 
             } else {
-                requestLogger.info("RESULT: Command ignored. Uknown command type '{}' in request {}. ",
+                requestLogger.info("RESULT: Command ignored. Unknown command type '{}' in request {}. ",
                         commandTypeName, command);
             }
             runtimeExceptionWasThrown = false;
@@ -143,6 +157,9 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
                 entityKVStateStore, entityKVStateStore.approximateNumEntries(), context.appConfigs());
     }
 
+    /**
+     * Process a request to create a new Entity.
+     */
     private void createEntity(GenericRecord createEntityRequest) {
 
         fillMDCAndLogStart(CREATE_COMMAND, createEntityRequest, CreateEntityRequestV1FieldNames.UUID);
@@ -209,6 +226,9 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         requestLogger.debug("START: request = {}", request);
     }
 
+    /**
+     * Construct an instance containing a new Entity.
+     */
     private GenericRecord createNewEntity(GenericRecord createEntityRequest) {
 
         GenericRecord entityAttributesFromRequest = (GenericRecord) createEntityRequest.get(
@@ -236,6 +256,9 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         return newEntity;
     }
 
+    /**
+     * Update currently used Entity schema in case a received Entity request contains new fields.
+     */
     private void provideNewSchemaIfNeeded(GenericRecord entityAttributesFromRequest) {
 
         requestLogger.debug("provideNewSchemaIfNeeded: entityAttributesFromRequest '{}'.",
@@ -339,6 +362,9 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         return newAttributes;
     }
 
+    /**
+     * Process a request to delete an Entity.
+     */
     private void deleteEntity(GenericRecord deleteEntityRequest) {
 
         fillMDCAndLogStart(DELETE_COMMAND, deleteEntityRequest, CreateEntityRequestV1FieldNames.UUID);
@@ -379,6 +405,9 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         }
     }
 
+    /**
+     * Process a request to start a subdomain resynchronization.
+     */
     private void startSubdomainResync(GenericRecord resyncAllStartSubdomainRequest) {
 
         fillMDCAndLogStart(RESYNC_START_COMMAND, resyncAllStartSubdomainRequest,
@@ -399,6 +428,9 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         requestLogger.info("RESULT: Resync started. For domain '{}'.", subdomainName);
     }
 
+    /**
+     * Process a request to end a subdomain resynchronization.
+     */
     private void endSubdomainResync(GenericRecord resyncAllEndSubdomainRequest) {
 
         fillMDCAndLogStart(RESYNC_END_COMMAND, resyncAllEndSubdomainRequest,
