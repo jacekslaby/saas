@@ -12,8 +12,10 @@ import java.util.Collections;
  * Logic is implemented as KeyValueMapper because it is used in KStreams processing.
  * See also:
  * - https://kafka.apache.org/21/documentation/streams/developer-guide/dsl-api.html#stateless-transformations
- *    "FlatMap - Takes one record and produces zero, one, or more records. You can modify the record keys and values, including their types."
- * - https://kafka.apache.org/21/javadoc/org/apache/kafka/streams/kstream/KStream.html#flatMap-org.apache.kafka.streams.kstream.KeyValueMapper-
+ *    "FlatMap - Takes one record and produces zero, one, or more records.
+ *      You can modify the record keys and values, including their types."
+ * - https://kafka.apache.org/21/javadoc/org/apache/kafka/streams/kstream/KStream.html#
+ *      flatMap-org.apache.kafka.streams.kstream.KeyValueMapper-
  */
 public class EntityKeyValueMapper implements KeyValueMapper<String, EntityV1, Iterable<KeyValue<String, EntityV1>>> {
 

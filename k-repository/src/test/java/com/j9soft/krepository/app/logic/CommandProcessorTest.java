@@ -48,7 +48,8 @@ public class CommandProcessorTest {
     public void test_whenUnknownRequest_itIsFlagged() {
 
         // Let's prepare a command which is unknown to our logic.
-        // ( Note: We could define an additional schema, but for now as an incorrect command type we just use EntityV1 schema. )
+        // ( Note: We could define an additional schema,
+        //   but for now as an incorrect command type we just use EntityV1 schema. )
         EntityV1 uknownRequest = EntityV1.newBuilder()
                 .setUuid(UUID.randomUUID().toString())
                 .setEntryDate(System.currentTimeMillis())
@@ -87,7 +88,8 @@ public class CommandProcessorTest {
         assertEquals(command.getEntityTypeName(), resultEntity.get(EntityV1FieldNames.ENTITY_TYPE_NAME) );
         assertEquals(command.getEntitySubdomainName(), resultEntity.get(EntityV1FieldNames.ENTITY_SUBDOMAIN_NAME) );
         assertEquals(command.getEntityIdInSubdomain(), resultEntity.get(EntityV1FieldNames.ENTITY_ID_IN_SUBDOMAIN));
-        assertAttributesAreEqual(command.getEntityAttributes(), (GenericRecord) resultEntity.get(EntityV1FieldNames.ATTRIBUTES));
+        assertAttributesAreEqual(command.getEntityAttributes(),
+                (GenericRecord) resultEntity.get(EntityV1FieldNames.ATTRIBUTES));
 
         // And verify that the same key and entity were forwarded.
         ArgumentCaptor<GenericRecord> argumentForwarded = ArgumentCaptor.forClass(GenericRecord.class);

@@ -19,21 +19,26 @@ import java.util.*;
  * Logic to build new value for an Entity based on received Request.
  * Depending on Request an Entity may be: created, deleted, updated.
  *
- * Logic is implemented as Processor<K,V> because it is used in Topology-based processing. (i.e. Processor API instead of StreamsBuilder API)
+ * Logic is implemented as Processor<K,V> because it is used in Topology-based processing.
+ * (i.e. Processor API instead of StreamsBuilder API)
  *
  * The in-memory state store is provided by the Topology.
  * Its name is provided to CommandProcessor constructor
  *  and is used to lookup store instance from ProcessorContext received in {@link #init(ProcessorContext)}.
  *
  * See also:
- * https://kafka.apache.org/21/javadoc/org/apache/kafka/streams/Topology.html#addProcessor-java.lang.String-org.apache.kafka.streams.processor.ProcessorSupplier-java.lang.String...-
+ * https://kafka.apache.org/21/javadoc/org/apache/kafka/streams/Topology.html#
+     addProcessor-java.lang.String-org.apache.kafka.streams.processor.ProcessorSupplier-java.lang.String...-
  */
 public class CommandProcessor implements Processor<String, GenericRecord> {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandProcessor.class);
-    // Separate requestLogger in order to be able to separate these request processing (i.e. frequent) log entries
-    //  from the other ones. (btw: The other ones convey status and we want to have them, i.e. we want to avoid a logfile being rolled over.)
-    private static final Logger requestLogger = LoggerFactory.getLogger(CommandProcessor.class.getName() + ".requests");
+    // We use a dedicated requestLogger in order to be able to separate log entries
+    //  made during a request processing (which is very frequent and produces lots of logging)
+    //  from the other ones. (btw: The other ones convey status and we want to have them,
+    //   i.e. we want to avoid a logfile being rolled over.)
+    private static final Logger requestLogger = LoggerFactory.getLogger(
+            CommandProcessor.class.getName() + ".requests");
     private static final String MDC_TASK_ID = "task-id";
     private static final String MDC_KEY_UUID = "uuid";
     private static final String MDC_KEY_COMMAND_TYPE = "command-type";
@@ -48,13 +53,16 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
     // The current Entity schema may be enhanced with additional fields during runtime.
     // (It happens when CommandProcessor receives a request with additional entity attributes.
-    //  In such case a new schema is created in process() method. It is also registered in Schema Registry by Avro SerDe.)
-    // (Note: This approach is thread safe due to KStreams threading model: "Each thread can execute one or more stream tasks".
+    //  In such case a new schema is created in process() method.
+    //  It is also registered in Schema Registry by Avro SerDe.)
+    // (Note: This approach is thread safe due to KStreams threading model:
+    //   "Each thread can execute one or more stream tasks".
     //   See also: https://docs.confluent.io/current/streams/architecture.html#threading-model )
     private Schema currentEntitySchema;
     private Schema currentAttributesSchema;
     private Set<String> currentAttributesSchemaFieldNamesSet;
-    private Map<String, Set<String>> subdomainsInResync = new HashMap<>(); // key is subdomain name (because subdomains are resynchronized independently)
+    private Map<String, Set<String>> subdomainsInResync =
+            new HashMap<>(); // key is subdomain name (because subdomains are resynchronized independently)
 
     public CommandProcessor(String entitiesStoreName) {
 
@@ -80,7 +88,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         this.context = context;
         entityKVStateStore = (KeyValueStore<String, GenericRecord>) context.getStateStore(entitiesStoreName);
 
-        logger.info("init: applicationId={}, taskId={}, processor={}, entityKVStateStore={}, entityKVStateStore.approximateNumEntries() = {}, appConfigs={}",
+        logger.info("init: applicationId={}, taskId={}, processor={}, entityKVStateStore={}," +
+                        " entityKVStateStore.approximateNumEntries() = {}, appConfigs={}",
                 context.applicationId(), context.taskId(), this,
                 entityKVStateStore, entityKVStateStore.approximateNumEntries(), context.appConfigs());
     }
@@ -92,6 +101,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
         try {
             String commandTypeName = command.getSchema().getFullName();
+
+            // (Ugly if-else statement because we depend on getSchema() API.)
 
             if (commandTypeName.equals(CreateEntityRequestV1.class.getName())) {
                 createEntity(command);
@@ -106,14 +117,16 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
                 endSubdomainResync(command);
 
             } else {
-                requestLogger.info("RESULT: Command ignored. Uknown command type '{}' in request {}. ", commandTypeName, command);
+                requestLogger.info("RESULT: Command ignored. Uknown command type '{}' in request {}. ",
+                        commandTypeName, command);
             }
             runtimeExceptionWasThrown = false;
 
         } finally {
             if (runtimeExceptionWasThrown) {
                 // Let's log additional context details in order to facilitate debugging.
-                logger.error("FAILURE: RuntimeException was thrown. Processing context: applicationId={}, taskId={}, messageKey '{}', command '{}'",
+                logger.error("FAILURE: RuntimeException was thrown. Processing context: " +
+                                "applicationId={}, taskId={}, messageKey '{}', command '{}'",
                         context.applicationId(), context.taskId(), messageKey, command);
             }
             // Let's remove the diagnostic context.
@@ -124,7 +137,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
     @Override
     public void close() {
-        logger.info("close: applicationId={}, taskId={}, processor={}, entityKVStateStore={}, entityKVStateStore.approximateNumEntries() = {}, appConfigs={}",
+        logger.info("close: applicationId={}, taskId={}, processor={}, " +
+                        "entityKVStateStore={}, entityKVStateStore.approximateNumEntries() = {}, appConfigs={}",
                 context.applicationId(), context.taskId(), this,
                 entityKVStateStore, entityKVStateStore.approximateNumEntries(), context.appConfigs());
     }
@@ -133,20 +147,27 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
         fillMDCAndLogStart(CREATE_COMMAND, createEntityRequest, CreateEntityRequestV1FieldNames.UUID);
 
-        String entityIdInSubdomain = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
-        String entitySubdomainName = createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+        String entityIdInSubdomain = createEntityRequest.get(
+                CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+        String entitySubdomainName = createEntityRequest.get(
+                CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
 
         // @FUTURE On entities topic the message key needs to be built also from KR_REPOSITORY_NAME
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
         //
-        // For entities topic the message key contains: {entity_subdomain_name, entity_id_in_subdomain} (because it is a compacted topic)
-        // For state store the entityKey contains: {entity_subdomain_name, entity_id_in_subdomain} (because it is a store of all subdomains)
+        // For entities topic the message key contains:
+        //   {entity_subdomain_name, entity_id_in_subdomain} (because it is a compacted topic)
+        // For state store the entityKey contains:
+        //   {entity_subdomain_name, entity_id_in_subdomain} (because it is a store of all subdomains)
         // (E.g. different adapters may provide the same notification_identifier and k-repository should store it.
         //   If need be it may be reconciled by other subsystem downstream.)
-        // (Note: It would be safer to use a structure more complicated than just a String, (e.g. a two field structure or an array)
-        //  but it would not be user friendly for browsing topic contents. So, we assume that character ';' is not used in subdomain names.)
-        // (Note: It is more efficient to have ID first (rather than Subdomain name), because it speeds up equals comparisons.)
+        // (Note: It would be safer to use a structure more complicated
+        //  than just a String, (e.g. a two field structure or an array)
+        //  but it would not be user friendly for browsing topic contents.
+        //  So, we assume that character ';' is not used in subdomain names.)
+        // (Note: It is more efficient to have ID first (rather than Subdomain name),
+        //   because it speeds up equals comparisons.)
         String entityKey = entityIdInSubdomain + ";" + entitySubdomainName;
         if (requestLogger.isDebugEnabled()) {
             requestLogger.debug("entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
@@ -201,9 +222,12 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         GenericRecord newEntity = new GenericData.Record(currentEntitySchema);
         newEntity.put(EntityV1FieldNames.UUID, UUID.randomUUID().toString());
         newEntity.put(EntityV1FieldNames.ENTRY_DATE, System.currentTimeMillis());
-        newEntity.put(EntityV1FieldNames.ENTITY_TYPE_NAME, createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_TYPE_NAME));
-        newEntity.put(EntityV1FieldNames.ENTITY_SUBDOMAIN_NAME, createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME));
-        newEntity.put(EntityV1FieldNames.ENTITY_ID_IN_SUBDOMAIN, createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN));
+        newEntity.put(EntityV1FieldNames.ENTITY_TYPE_NAME,
+                createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_TYPE_NAME));
+        newEntity.put(EntityV1FieldNames.ENTITY_SUBDOMAIN_NAME,
+                createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME));
+        newEntity.put(EntityV1FieldNames.ENTITY_ID_IN_SUBDOMAIN,
+                createEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN));
         GenericRecord newAttributes = createAttributes( entityAttributesFromRequest );
         if (newAttributes != null) {
             newEntity.put(EntityV1FieldNames.ATTRIBUTES, newAttributes);
@@ -214,7 +238,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
     private void provideNewSchemaIfNeeded(GenericRecord entityAttributesFromRequest) {
 
-        requestLogger.debug("provideNewSchemaIfNeeded: entityAttributesFromRequest '{}'.", entityAttributesFromRequest);
+        requestLogger.debug("provideNewSchemaIfNeeded: entityAttributesFromRequest '{}'.",
+                entityAttributesFromRequest);
 
         if (entityAttributesFromRequest == null) {
             return; // record with attributes is optional (i.e. it may be null in Request (and in Entity))
@@ -227,7 +252,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
             String fieldName = fieldFromRequest.name();
             requestLogger.debug("provideNewSchemaIfNeeded: check for existence of entity attribute '{}'.", fieldName);
             if (!currentAttributesSchemaFieldNamesSet.contains(fieldName)) {
-                requestLogger.debug("provideNewSchemaIfNeeded: This attribute does not exist '{}'. A new schema is required.", fieldName);
+                requestLogger.debug("provideNewSchemaIfNeeded: This attribute does not exist '{}'." +
+                        " A new schema is required.", fieldName);
                 missingFieldsList.add(fieldFromRequest);
             }
         }
@@ -286,13 +312,15 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
             newFieldsList.add(newField);
         }
         // Add new fields.
-        // @FUTURE check if it is a union (i.e. an optional field) - if not then correct it. We want (?) all fields to be optional.
+        // @FUTURE check if it is a union (i.e. an optional field) - if not then correct it.
+        //   We want (?) all fields to be optional.
         for (Schema.Field f : missingFieldsList) {
             Schema.Field newField = new Schema.Field(f.name(), f.schema(), f.doc(), f.defaultVal());
             newFieldsList.add(newField);
         }
 
-        // Let's create the record schema. (it is the second one in the union defined in field entity_attributes, i.e. union of {null, record})
+        // Let's create the record schema.
+        //  (it is the second one in the union defined in field entity_attributes, i.e. union of {null, record})
         Schema newEntityAttributesRecordSchema = Schema.createRecord(oldEntityAttributesRecordSchema.getName(),
                 oldEntityAttributesRecordSchema.getDoc(), oldEntityAttributesRecordSchema.getNamespace(), false);
         newEntityAttributesRecordSchema.setFields(newFieldsList);
@@ -315,11 +343,14 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
         fillMDCAndLogStart(DELETE_COMMAND, deleteEntityRequest, CreateEntityRequestV1FieldNames.UUID);
 
-        // @FUTURE On entities topic the message key needs to be built from entity_subdomain_name + entity_id_in_subdomain.
+        // @FUTURE On entities topic the message key needs to be built from:
+        //   entity_subdomain_name + entity_id_in_subdomain.
         //  (needed in case when different environments (e.g. prod, ref, test) (or clientA, clientB, multitenancy)
         //   use the same topics)
-        String entityIdInSubdomain = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
-        String entitySubdomainName = deleteEntityRequest.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+        String entityIdInSubdomain = deleteEntityRequest.get(
+                CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+        String entitySubdomainName = deleteEntityRequest.get(
+                CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
         String entityKey = entityIdInSubdomain + ";" + entitySubdomainName;
         if (requestLogger.isDebugEnabled()) {
             requestLogger.debug("entityKey = {}, entityIdInSubdomain = {}, entitySubdomainName = {}",
@@ -353,7 +384,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         fillMDCAndLogStart(RESYNC_START_COMMAND, resyncAllStartSubdomainRequest,
                 ResyncAllStartSubdomainRequestV1FieldNames.UUID);
 
-        String subdomainName = resyncAllStartSubdomainRequest.get(ResyncAllStartSubdomainRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+        String subdomainName = resyncAllStartSubdomainRequest.get(
+                ResyncAllStartSubdomainRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
         if (requestLogger.isDebugEnabled()) {
             requestLogger.debug("subdomainName = {}", subdomainName);
             requestLogger.debug("entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
@@ -372,7 +404,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         fillMDCAndLogStart(RESYNC_END_COMMAND, resyncAllEndSubdomainRequest,
                 ResyncAllEndSubdomainRequestV1FieldNames.UUID);
 
-        String subdomainName = resyncAllEndSubdomainRequest.get(ResyncAllEndSubdomainRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+        String subdomainName = resyncAllEndSubdomainRequest.get(
+                ResyncAllEndSubdomainRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
         if (requestLogger.isDebugEnabled()) {
             requestLogger.debug("subdomainName = {}", subdomainName);
             requestLogger.debug("entityKVStateStore = {}, entityKVStateStore.approximateNumEntries() = {}",
@@ -381,7 +414,8 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
 
         Set<String> keysOfSurvivingEntities = subdomainsInResync.remove(subdomainName);
         if (keysOfSurvivingEntities == null) {
-            requestLogger.info("RESULT: Resync end ignored. Earlier there was no ResyncAllStartSubdomainRequestV1 for domain '{}'.", subdomainName);
+            requestLogger.info("RESULT: Resync end ignored. " +
+                    "Earlier there was no ResyncAllStartSubdomainRequestV1 for domain '{}'.", subdomainName);
             return;
         }
 
@@ -390,8 +424,10 @@ public class CommandProcessor implements Processor<String, GenericRecord> {
         final KeyValueIterator<String, GenericRecord> allKVIterator = entityKVStateStore.all();
         while (allKVIterator.hasNext()) {
             KeyValue<String, GenericRecord> storeEntry = allKVIterator.next();
-            String entitySubdomainName = storeEntry.value.get(CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
-            String entityIdInSubdomain = storeEntry.value.get(CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
+            String entitySubdomainName = storeEntry.value.get(
+                    CreateEntityRequestV1FieldNames.ENTITY_SUBDOMAIN_NAME).toString();
+            String entityIdInSubdomain = storeEntry.value.get(
+                    CreateEntityRequestV1FieldNames.ENTITY_ID_IN_SUBDOMAIN).toString();
             if (subdomainName.equals(entitySubdomainName)) {
                 if (!keysOfSurvivingEntities.remove(entityIdInSubdomain)) {
                     // It means that this id was not delivered during resync. So we should delete it.

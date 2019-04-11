@@ -37,7 +37,8 @@ public class KRepositoryConfig {
                             .filter(e -> ((String) e.getKey()).startsWith("KR_"))
                             .toArray())
             );
-            logger.info("Connecting to Kafka at: {}, Schema Registry at: {}, using Repository Name (group.id and topics' prefix): {}",
+            logger.info("Connecting to Kafka at: {}, Schema Registry at: {}," +
+                            " using Repository Name (group.id and topics' prefix): {}",
                     bootstrapServers, schemaRegistryUrl, repositoryName);
         }
 
@@ -84,7 +85,8 @@ public class KRepositoryConfig {
         //
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "k-repository-" + this.repositoryName);
 
-        // The Kafka bootstrap servers. This is the same setting that is used by the underlying producer and consumer clients to connect to the Kafka cluster.
+        // The Kafka bootstrap servers. This is the same setting that is used by the underlying producer
+        //   and consumer clients to connect to the Kafka cluster.
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
 
         // We want to skip unknown requests, i.e. those not matching avro schemas.
